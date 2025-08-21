@@ -1,0 +1,233 @@
+# RAG Document Processing Utility Configuration
+# This file contains the main configuration for the document processing pipeline
+
+# Document Processing Configuration
+document_processing:
+  # Supported document formats and their processing strategies
+  supported_formats:
+    pdf:
+      parsers: [marker, pymupdf, unstructured]
+      priority: 1
+      chunking_strategy: semantic
+      metadata_extraction: enhanced
+    docx:
+      parsers: [python-docx, unstructured]
+      priority: 2
+      chunking_strategy: structural
+      metadata_extraction: standard
+    html:
+      parsers: [beautifulsoup, unstructured]
+      priority: 3
+      chunking_strategy: semantic
+      metadata_extraction: web_enhanced
+    txt:
+      parsers: [unstructured]
+      priority: 4
+      chunking_strategy: fixed_size
+      metadata_extraction: basic
+    md:
+      parsers: [unstructured]
+      priority: 5
+      chunking_strategy: structural
+      metadata_extraction: markdown_enhanced
+
+  # Chunking configuration
+  chunking:
+    default_size: 1000
+    default_overlap: 150
+    strategies:
+      semantic:
+        enabled: true
+        min_size: 500
+        max_size: 2000
+        overlap: 200
+      structural:
+        enabled: true
+        respect_headings: true
+        respect_sections: true
+        min_section_size: 300
+      fixed_size:
+        enabled: true
+        size: 1000
+        overlap: 150
+
+  # Metadata extraction configuration
+  metadata_extraction:
+    llm_provider: openai
+    models:
+      openai:
+        model: gpt-4
+        temperature: 0.1
+        max_tokens: 4000
+      local:
+        model: sentence-transformers/all-MiniLM-L6-v2
+        device: auto
+    
+    extraction_schemas:
+      academic_paper:
+        entities: [authors, institutions, dates, keywords, abstract, methodology]
+        topics: [research_area, methodology_type, findings]
+        relationships: [citations, references, collaborations]
+      technical_manual:
+        entities: [products, versions, procedures, warnings, requirements]
+        topics: [technical_domain, complexity_level, target_audience]
+        relationships: [dependencies, prerequisites, alternatives]
+      general:
+        entities: [people, organizations, locations, dates, concepts]
+        topics: [main_subject, subtopics, themes]
+        relationships: [associations, hierarchies, sequences]
+
+# Multimodal Processing Configuration
+multimodal_processing:
+  enabled: true
+  
+  # Table extraction
+  tables:
+    enabled: true
+    extraction_methods: [camelot, tabula, pdfplumber]
+    output_formats: [json, csv, markdown]
+    preserve_structure: true
+    link_with_context: true
+  
+  # Image processing
+  images:
+    enabled: true
+    extraction_quality: high
+    ocr_enabled: true
+    ocr_engines: [tesseract, easyocr]
+    embedding_model: clip
+    preserve_metadata: true
+  
+  # Mathematical content
+  math_content:
+    enabled: true
+    formula_detection: true
+    latex_conversion: true
+    preserve_context: true
+
+# Vector Database Configuration
+vector_database:
+  type: chromadb
+  config:
+    chromadb:
+      persist_directory: ./vector_db
+      embedding_function: sentence-transformers
+      collection_name: rag_documents
+    pinecone:
+      api_key: ${PINECONE_API_KEY}
+      environment: ${PINECONE_ENVIRONMENT}
+      index_name: rag-documents
+    weaviate:
+      url: ${WEAVIATE_URL}
+      api_key: ${WEAVIATE_API_KEY}
+      class_name: DocumentChunk
+  
+  # Indexing strategy
+  indexing:
+    primary_index: semantic
+    metadata_index: true
+    hierarchy_index: true
+    multimodal_index: true
+    
+    # Embedding models
+    embedding_models:
+      text: sentence-transformers/all-MiniLM-L6-v2
+      multimodal: openai/clip-vit-base-patch32
+      technical: sentence-transformers/all-mpnet-base-v2
+
+# Quality Assurance Configuration
+quality_assurance:
+  enabled: true
+  
+  # Validation thresholds
+  thresholds:
+    content_accuracy: 0.95
+    structure_preservation: 0.90
+    metadata_quality: 0.85
+    processing_speed_seconds: 30
+    memory_usage_mb: 2048
+  
+  # Validation methods
+  validation:
+    content_completeness: true
+    structure_integrity: true
+    metadata_accuracy: true
+    embedding_quality: true
+    performance_metrics: true
+  
+  # Continuous improvement
+  continuous_improvement:
+    error_pattern_analysis: true
+    model_refinement: true
+    strategy_optimization: true
+    user_feedback_integration: true
+
+# Performance Configuration
+performance:
+  # Processing settings
+  batch_size: 10
+  max_workers: 4
+  
+  # Caching
+  caching:
+    enabled: true
+    ttl_hours: 24
+    max_size_mb: 1000
+  
+  # Memory management
+  memory:
+    max_usage_mb: 2048
+    cleanup_threshold: 0.8
+    enable_profiling: false
+  
+  # Monitoring
+  monitoring:
+    enable_metrics: true
+    log_performance: true
+    alert_thresholds: true
+
+# Output Configuration
+output:
+  # File formats
+  formats:
+    chunks: [json, parquet]
+    metadata: [json, yaml]
+    embeddings: [numpy, parquet]
+  
+  # Directory structure
+  directories:
+    chunks: ./output/chunks
+    metadata: ./output/metadata
+    embeddings: ./output/embeddings
+    logs: ./logs
+    temp: ./temp
+  
+  # File naming
+  naming:
+    chunks: "{doc_id}_{chunk_id}_{timestamp}.json"
+    metadata: "{doc_id}_metadata_{timestamp}.json"
+    embeddings: "{doc_id}_embeddings_{timestamp}.parquet"
+
+# Logging Configuration
+logging:
+  level: INFO
+  format: structured
+  output:
+    console: true
+    file: true
+    file_path: ./logs/rag_prep.log
+  
+  # Structured logging
+  structured:
+    include_timestamp: true
+    include_level: true
+    include_module: true
+    include_function: true
+    include_line_number: true
+  
+  # Performance logging
+  performance:
+    log_processing_time: true
+    log_memory_usage: true
+    log_chunk_counts: true
+    log_quality_metrics: true

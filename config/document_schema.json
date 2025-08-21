@@ -1,0 +1,330 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "RAG Document Processing Schema",
+  "description": "Schema for document chunks and metadata in the RAG processing pipeline",
+  
+  "definitions": {
+    "DocumentChunk": {
+      "type": "object",
+      "required": ["chunk_id", "content", "metadata", "embeddings"],
+      "properties": {
+        "chunk_id": {
+          "type": "string",
+          "description": "Unique identifier for the chunk"
+        },
+        "document_id": {
+          "type": "string",
+          "description": "ID of the source document"
+        },
+        "content": {
+          "type": "string",
+          "description": "The actual text content of the chunk"
+        },
+        "chunk_type": {
+          "type": "string",
+          "enum": ["text", "table", "image", "math", "mixed"],
+          "description": "Type of content in the chunk"
+        },
+        "position": {
+          "type": "object",
+          "properties": {
+            "start": {"type": "integer"},
+            "end": {"type": "integer"},
+            "page": {"type": "integer"},
+            "section": {"type": "string"}
+          }
+        },
+        "metadata": {
+          "$ref": "#/definitions/ChunkMetadata"
+        },
+        "embeddings": {
+          "$ref": "#/definitions/Embeddings"
+        },
+        "relationships": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Relationship"
+          }
+        },
+        "processing_info": {
+          "$ref": "#/definitions/ProcessingInfo"
+        }
+      }
+    },
+    
+    "ChunkMetadata": {
+      "type": "object",
+      "properties": {
+        "entities": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Entity"
+          }
+        },
+        "topics": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Topic"
+          }
+        },
+        "structural": {
+          "$ref": "#/definitions/StructuralMetadata"
+        },
+        "semantic": {
+          "$ref": "#/definitions/SemanticMetadata"
+        },
+        "quality": {
+          "$ref": "#/definitions/QualityMetrics"
+        }
+      }
+    },
+    
+    "Entity": {
+      "type": "object",
+      "required": ["text", "type", "confidence"],
+      "properties": {
+        "text": {"type": "string"},
+        "type": {
+          "type": "string",
+          "enum": ["person", "organization", "location", "date", "concept", "product", "event"]
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "normalized_value": {"type": "string"},
+        "context": {"type": "string"}
+      }
+    },
+    
+    "Topic": {
+      "type": "object",
+      "required": ["name", "confidence"],
+      "properties": {
+        "name": {"type": "string"},
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "hierarchy_level": {"type": "integer"},
+        "parent_topic": {"type": "string"},
+        "subtopics": {
+          "type": "array",
+          "items": {"type": "string"}
+        }
+      }
+    },
+    
+    "StructuralMetadata": {
+      "type": "object",
+      "properties": {
+        "heading_level": {"type": "integer"},
+        "section_type": {"type": "string"},
+        "list_type": {"type": "string"},
+        "table_info": {
+          "$ref": "#/definitions/TableInfo"
+        },
+        "image_info": {
+          "$ref": "#/definitions/ImageInfo"
+        },
+        "math_info": {
+          "$ref": "#/definitions/MathInfo"
+        }
+      }
+    },
+    
+    "SemanticMetadata": {
+      "type": "object",
+      "properties": {
+        "summary": {"type": "string"},
+        "key_points": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "sentiment": {
+          "type": "string",
+          "enum": ["positive", "negative", "neutral", "mixed"]
+        },
+        "complexity": {
+          "type": "string",
+          "enum": ["basic", "intermediate", "advanced", "expert"]
+        },
+        "domain": {"type": "string"},
+        "language": {"type": "string"}
+      }
+    },
+    
+    "TableInfo": {
+      "type": "object",
+      "properties": {
+        "rows": {"type": "integer"},
+        "columns": {"type": "integer"},
+        "has_header": {"type": "boolean"},
+        "table_type": {"type": "string"},
+        "extraction_method": {"type": "string"},
+        "confidence": {"type": "number"}
+      }
+    },
+    
+    "ImageInfo": {
+      "type": "object",
+      "properties": {
+        "format": {"type": "string"},
+        "dimensions": {
+          "type": "object",
+          "properties": {
+            "width": {"type": "integer"},
+            "height": {"type": "integer"}
+          }
+        },
+        "ocr_text": {"type": "string"},
+        "caption": {"type": "string"},
+        "alt_text": {"type": "string"}
+      }
+    },
+    
+    "MathInfo": {
+      "type": "object",
+      "properties": {
+        "formula_type": {"type": "string"},
+        "latex": {"type": "string"},
+        "variables": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "complexity": {"type": "string"}
+      }
+    },
+    
+    "Embeddings": {
+      "type": "object",
+      "required": ["text_embedding", "model"],
+      "properties": {
+        "text_embedding": {
+          "type": "array",
+          "items": {"type": "number"}
+        },
+        "multimodal_embedding": {
+          "type": "array",
+          "items": {"type": "number"}
+        },
+        "model": {"type": "string"},
+        "dimension": {"type": "integer"},
+        "normalized": {"type": "boolean"}
+      }
+    },
+    
+    "Relationship": {
+      "type": "object",
+      "required": ["type", "target_chunk_id", "strength"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["continuation", "reference", "similarity", "hierarchy", "citation"]
+        },
+        "target_chunk_id": {"type": "string"},
+        "strength": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "description": {"type": "string"}
+      }
+    },
+    
+    "ProcessingInfo": {
+      "type": "object",
+      "properties": {
+        "parser_used": {"type": "string"},
+        "chunking_strategy": {"type": "string"},
+        "processing_time_ms": {"type": "number"},
+        "memory_usage_mb": {"type": "number"},
+        "quality_score": {"type": "number"},
+        "errors": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "warnings": {
+          "type": "array",
+          "items": {"type": "string"}
+        }
+      }
+    },
+    
+    "QualityMetrics": {
+      "type": "object",
+      "properties": {
+        "content_completeness": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "structure_preservation": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "metadata_accuracy": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "readability_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "semantic_coherence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    }
+  },
+  
+  "type": "object",
+  "properties": {
+    "document_id": {"type": "string"},
+    "chunks": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/DocumentChunk"
+      }
+    },
+    "document_metadata": {
+      "type": "object",
+      "properties": {
+        "title": {"type": "string"},
+        "authors": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "date_created": {"type": "string", "format": "date-time"},
+        "date_modified": {"type": "string", "format": "date-time"},
+        "format": {"type": "string"},
+        "size_bytes": {"type": "integer"},
+        "page_count": {"type": "integer"},
+        "language": {"type": "string"},
+        "summary": {"type": "string"},
+        "keywords": {
+          "type": "array",
+          "items": {"type": "string"}
+        }
+      }
+    },
+    "processing_summary": {
+      "type": "object",
+      "properties": {
+        "total_chunks": {"type": "integer"},
+        "processing_time_seconds": {"type": "number"},
+        "memory_usage_mb": {"type": "number"},
+        "quality_score": {"type": "number"},
+        "errors_count": {"type": "integer"},
+        "warnings_count": {"type": "integer"}
+      }
+    }
+  }
+}

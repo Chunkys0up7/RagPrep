@@ -1,0 +1,99 @@
+site_name: RAG Document Processing Utility
+site_description: Comprehensive documentation for the RAG document processing utility
+site_author: RAGPrep Team
+site_url: https://yourusername.github.io/RAGPrep
+
+repo_name: yourusername/RAGPrep
+repo_url: https://github.com/yourusername/RAGPrep
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.highlight
+    - search.share
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/toggle-switch
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/toggle-switch-off-outline
+        name: Switch to light mode
+
+plugins:
+  - search
+  - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          paths: [../src]
+          options:
+            show_source: true
+            show_root_heading: true
+
+nav:
+  - Home: index.md
+  - User Guide:
+    - Getting Started: user-guide/getting-started.md
+    - Configuration: user-guide/configuration.md
+    - Processing Pipeline: user-guide/processing-pipeline.md
+    - Quality Assurance: user-guide/quality-assurance.md
+  - API Reference:
+    - Core Classes: api/core-classes.md
+    - Parsers: api/parsers.md
+    - Chunkers: api/chunkers.md
+    - Metadata Extractors: api/metadata-extractors.md
+  - Configuration:
+    - Settings: configuration/settings.md
+    - Schemas: configuration/schemas.md
+    - Examples: configuration/examples.md
+  - Development:
+    - Setup: development/setup.md
+    - Architecture: development/architecture.md
+    - Testing: development/testing.md
+    - Contributing: development/contributing.md
+
+markdown_extensions:
+  - admonition
+  - codehilite
+  - footnotes
+  - meta
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_generator: materialx.emoji.to_svg
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.magiclink
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.snippets:
+      check_paths: true
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: mermaid.fence_mermaid
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+  - toc:
+      permalink: true
