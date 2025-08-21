@@ -1,143 +1,245 @@
 """
 Configuration Management
 
-This module handles loading and managing configuration for the RAG document processing utility.
+This module provides comprehensive configuration management for the RAG Document Processing Utility.
+It handles loading from YAML files, environment variables, and provides validation and type safety.
 """
 
 import os
 import yaml
+import logging
 from pathlib import Path
-from typing import Dict, Any, Optional
-from pydantic import BaseModel, Field
+from typing import Dict, Any, Optional, List, Union
+from pydantic import BaseModel, Field, validator, root_validator
 from pydantic_settings import BaseSettings
 
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-class DocumentProcessingConfig(BaseModel):
-    """Configuration for document processing settings."""
-    supported_formats: Dict[str, Dict[str, Any]] = Field(default_factory=dict)
-    chunking: Dict[str, Any] = Field(default_factory=dict)
-    metadata_extraction: Dict[str, Any] = Field(default_factory=dict)
+
+class ParserConfig(BaseModel):
+    """Configuration for document parsers."""
+    parsers: List[str] = Field(default_factory=list, description="List of parser names to use")
+    priority: int = Field(default=1, description="Priority order for this parser")
+    chunking_strategy: str = Field(default="semantic", description="Chunking strategy for this format")
+    metadata_extraction: str = Field(default="basic", description="Metadata extraction level")
+    
+    @validator('chunking_strategy')
+    def validate_chunking_strategy(cls, v):
+        valid_strategies = ['semantic', 'fixed', 'structural', 'hybrid']
+        if v not in valid_strategies:
+            raise ValueError(f'chunking_strategy must be one of {valid_strategies}')
+        return v
+    
+    @validator('metadata_extraction')
+    def validate_metadata_extraction(cls, v):
+        valid_levels = ['basic', 'enhanced', 'llm_powered']
+        if v not in valid_levels:
+            raise ValueError(f'metadata_extraction must be one of {valid_levels}')
+        return v
+
+
+class ChunkingConfig(BaseModel):
+    """Configuration for document chunking."""
+    strategy: str = Field(default="hybrid", description="Primary chunking strategy")
+    max_chunk_size: int = Field(default=1000, description="Maximum chunk size in characters")
+    min_chunk_size: int = Field(default=100, description="Minimum chunk size in characters")
+    overlap_size: int = Field(default=200, description="Overlap size between chunks")
+    semantic_threshold: float = Field(default=0.7, description="Semantic similarity threshold")
+    
+    @validator('max_chunk_size')
+    def validate_max_chunk_size(cls, v):
+        if v < 100:
+            raise ValueError('max_chunk_size must be at least 100')
+        return v
+    
+    @validator('min_chunk_size')
+    def validate_min_chunk_size(cls, v):
+        if v < 50:
+            raise ValueError('min_chunk_size must be at least 50')
+        return v
+    
+    @validator('overlap_size')
+    def validate_overlap_size(cls, v):
+        if v < 0:
+            raise ValueError('overlap_size must be non-negative')
+        return v
+    
+    @validator('semantic_threshold')
+    def validate_semantic_threshold(cls, v):
+        if not 0.0 <= v <= 1.0:
+            raise ValueError('semantic_threshold must be between 0.0 and 1.0')
+        return v
+
+
+class MetadataConfig(BaseModel):
+    """Configuration for metadata extraction."""
+    extraction_level: str = Field(default="enhanced", description="Metadata extraction level")
+    llm_provider: str = Field(default="openai", description="LLM provider for enhanced extraction")
+    entity_recognition: bool = Field(default=True, description="Enable entity recognition")
+    topic_extraction: bool = Field(default=True, description="Enable topic extraction")
+    relationship_extraction: bool = Field(default=True, description="Enable relationship extraction")
+    summarization: bool = Field(default=True, description="Enable content summarization")
+    
+    @validator('extraction_level')
+    def validate_extraction_level(cls, v):
+        valid_levels = ['basic', 'enhanced', 'llm_powered']
+        if v not in valid_levels:
+            raise ValueError(f'extraction_level must be one of {valid_levels}')
+        return v
 
 
 class MultimodalConfig(BaseModel):
-    """Configuration for multimodal processing."""
-    enabled: bool = True
-    tables: Dict[str, Any] = Field(default_factory=dict)
-    images: Dict[str, Any] = Field(default_factory=dict)
-    math_content: Dict[str, Any] = Field(default_factory=dict)
+    """Configuration for multimodal content processing."""
+    image_processing: bool = Field(default=True, description="Enable image processing")
+    table_extraction: bool = Field(default=True, description="Enable table extraction")
+    math_processing: bool = Field(default=True, description="Enable mathematical content processing")
+    ocr_engine: str = Field(default="tesseract", description="OCR engine for image processing")
+    table_parser: str = Field(default="camelot", description="Table parsing library")
+    
+    @validator('ocr_engine')
+    def validate_ocr_engine(cls, v):
+        valid_engines = ['tesseract', 'easyocr', 'paddleocr']
+        if v not in valid_engines:
+            raise ValueError(f'ocr_engine must be one of {valid_engines}')
+        return v
+    
+    @validator('table_parser')
+    def validate_table_parser(cls, v):
+        valid_parsers = ['camelot', 'tabula', 'pdfplumber']
+        if v not in valid_parsers:
+            raise ValueError(f'table_parser must be one of {valid_parsers}')
+        return v
 
 
 class VectorDBConfig(BaseModel):
-    """Configuration for vector database settings."""
-    type: str = "chromadb"
-    config: Dict[str, Any] = Field(default_factory=dict)
-    indexing: Dict[str, Any] = Field(default_factory=dict)
+    """Configuration for vector database integration."""
+    provider: str = Field(default="chromadb", description="Vector database provider")
+    embedding_model: str = Field(default="sentence-transformers/all-MiniLM-L6-v2", description="Embedding model")
+    index_type: str = Field(default="hnsw", description="Index type for vector search")
+    similarity_metric: str = Field(default="cosine", description="Similarity metric for search")
+    
+    @validator('provider')
+    def validate_provider(cls, v):
+        valid_providers = ['chromadb', 'pinecone', 'weaviate', 'faiss']
+        if v not in valid_providers:
+            raise ValueError(f'provider must be one of {valid_providers}')
+        return v
+    
+    @validator('similarity_metric')
+    def validate_similarity_metric(cls, v):
+        valid_metrics = ['cosine', 'euclidean', 'dot_product']
+        if v not in valid_metrics:
+            raise ValueError(f'similarity_metric must be one of {valid_metrics}')
+        return v
 
 
-class QualityAssuranceConfig(BaseModel):
+class QualityConfig(BaseModel):
     """Configuration for quality assurance."""
-    enabled: bool = True
-    thresholds: Dict[str, float] = Field(default_factory=dict)
-    validation: Dict[str, bool] = Field(default_factory=dict)
-    continuous_improvement: Dict[str, bool] = Field(default_factory=dict)
+    enable_validation: bool = Field(default=True, description="Enable quality validation")
+    content_completeness: bool = Field(default=True, description="Check content completeness")
+    structure_integrity: bool = Field(default=True, description="Check structure integrity")
+    metadata_accuracy: bool = Field(default=True, description="Check metadata accuracy")
+    embedding_quality: bool = Field(default=True, description="Check embedding quality")
+    performance_monitoring: bool = Field(default=True, description="Enable performance monitoring")
 
 
 class PerformanceConfig(BaseModel):
     """Configuration for performance settings."""
-    batch_size: int = 10
-    max_workers: int = 4
-    caching: Dict[str, Any] = Field(default_factory=dict)
-    memory: Dict[str, Any] = Field(default_factory=dict)
-    monitoring: Dict[str, bool] = Field(default_factory=dict)
+    max_workers: int = Field(default=4, description="Maximum number of worker processes")
+    batch_size: int = Field(default=10, description="Batch size for processing")
+    memory_limit: str = Field(default="2GB", description="Memory limit for processing")
+    timeout: int = Field(default=300, description="Timeout for operations in seconds")
+    
+    @validator('max_workers')
+    def validate_max_workers(cls, v):
+        if v < 1:
+            raise ValueError('max_workers must be at least 1')
+        return v
+    
+    @validator('batch_size')
+    def validate_batch_size(cls, v):
+        if v < 1:
+            raise ValueError('batch_size must be at least 1')
+        return v
 
 
 class OutputConfig(BaseModel):
     """Configuration for output settings."""
-    formats: Dict[str, list] = Field(default_factory=dict)
-    directories: Dict[str, str] = Field(default_factory=dict)
-    naming: Dict[str, str] = Field(default_factory=dict)
+    output_dir: str = Field(default="output", description="Output directory for processed documents")
+    chunk_dir: str = Field(default="chunks", description="Directory for document chunks")
+    metadata_dir: str = Field(default="metadata", description="Directory for metadata files")
+    embedding_dir: str = Field(default="embeddings", description="Directory for embedding files")
+    temp_dir: str = Field(default="temp", description="Temporary directory for processing")
+    preserve_structure: bool = Field(default=True, description="Preserve original document structure")
 
 
 class LoggingConfig(BaseModel):
-    """Configuration for logging settings."""
-    level: str = "INFO"
-    format: str = "structured"
-    output: Dict[str, Any] = Field(default_factory=dict)
-    structured: Dict[str, bool] = Field(default_factory=dict)
-    performance: Dict[str, bool] = Field(default_factory=dict)
+    """Configuration for logging."""
+    level: str = Field(default="INFO", description="Logging level")
+    format: str = Field(default="%(asctime)s - %(name)s - %(levelname)s - %(message)s", description="Log format")
+    file: Optional[str] = Field(default=None, description="Log file path")
+    max_size: str = Field(default="10MB", description="Maximum log file size")
+    backup_count: int = Field(default=5, description="Number of backup log files")
+    
+    @validator('level')
+    def validate_level(cls, v):
+        valid_levels = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
+        if v.upper() not in valid_levels:
+            raise ValueError(f'level must be one of {valid_levels}')
+        return v.upper()
+
+
+class DocumentProcessingConfig(BaseModel):
+    """Configuration for document processing."""
+    supported_formats: Dict[str, ParserConfig] = Field(
+        default_factory=lambda: {
+            "pdf": ParserConfig(
+                parsers=["marker", "pymupdf", "unstructured"],
+                priority=1,
+                chunking_strategy="semantic",
+                metadata_extraction="enhanced"
+            ),
+            "docx": ParserConfig(
+                parsers=["python-docx", "unstructured"],
+                priority=2,
+                chunking_strategy="structural",
+                metadata_extraction="basic"
+            ),
+            "txt": ParserConfig(
+                parsers=["unstructured"],
+                priority=3,
+                chunking_strategy="fixed",
+                metadata_extraction="basic"
+            )
+        },
+        description="Configuration for supported document formats"
+    )
+    chunking: ChunkingConfig = Field(default_factory=ChunkingConfig)
+    metadata: MetadataConfig = Field(default_factory=MetadataConfig)
+    multimodal: MultimodalConfig = Field(default_factory=MultimodalConfig)
+    quality: QualityConfig = Field(default_factory=QualityConfig)
+    performance: PerformanceConfig = Field(default_factory=PerformanceConfig)
+    output: OutputConfig = Field(default_factory=OutputConfig)
+    logging: LoggingConfig = Field(default_factory=LoggingConfig)
 
 
 class Config(BaseSettings):
     """Main configuration class for the RAG document processing utility."""
     
-    # Environment variables
+    # Environment variable fields
     openai_api_key: Optional[str] = Field(default=None, env="OPENAI_API_KEY")
     pinecone_api_key: Optional[str] = Field(default=None, env="PINECONE_API_KEY")
-    pinecone_environment: Optional[str] = Field(default=None, env="PINECONE_ENVIRONMENT")
-    weaviate_api_key: Optional[str] = Field(default=None, env="WEAVIATE_API_KEY")
     weaviate_url: Optional[str] = Field(default=None, env="WEAVIATE_URL")
+    chroma_host: Optional[str] = Field(default="localhost", env="CHROMA_HOST")
+    chroma_port: int = Field(default=8000, env="CHROMA_PORT")
+    
+    # Configuration file path
+    config_path: Optional[str] = Field(default="config/config.yaml", env="CONFIG_PATH")
     
     # Document processing configuration
     document_processing: DocumentProcessingConfig = Field(default_factory=DocumentProcessingConfig)
-    multimodal_processing: MultimodalConfig = Field(default_factory=MultimodalConfig)
-    vector_database: VectorDBConfig = Field(default_factory=VectorDBConfig)
-    quality_assurance: QualityAssuranceConfig = Field(default_factory=QualityAssuranceConfig)
-    performance: PerformanceConfig = Field(default_factory=PerformanceConfig)
-    output: OutputConfig = Field(default_factory=OutputConfig)
-    logging: LoggingConfig = Field(default_factory=LoggingConfig)
-    
-    # Default values
-    default_chunk_size: int = Field(default=1000, env="DEFAULT_CHUNK_SIZE")
-    default_chunk_overlap: int = Field(default=150, env="DEFAULT_CHUNK_OVERLAP")
-    max_document_size_mb: int = Field(default=100, env="MAX_DOCUMENT_SIZE_MB")
-    supported_formats: str = Field(default="pdf,docx,html,txt,md", env="SUPPORTED_FORMATS")
-    
-    # LLM configuration
-    default_llm_model: str = Field(default="gpt-4", env="DEFAULT_LLM_MODEL")
-    default_embedding_model: str = Field(default="text-embedding-ada-002", env="DEFAULT_EMBEDDING_MODEL")
-    max_tokens: int = Field(default=4000, env="MAX_TOKENS")
-    temperature: float = Field(default=0.1, env="TEMPERATURE")
-    
-    # Vector database configuration
-    vector_db_type: str = Field(default="chromadb", env="VECTOR_DB_TYPE")
-    chroma_persist_directory: str = Field(default="./vector_db", env="CHROMA_PERSIST_DIRECTORY")
-    embedding_dimension: int = Field(default=1536, env="EMBEDDING_DIMENSION")
-    
-    # Quality assurance settings
-    min_content_accuracy: float = Field(default=0.95, env="MIN_CONTENT_ACCURACY")
-    min_structure_preservation: float = Field(default=0.90, env="MIN_STRUCTURE_PRESERVATION")
-    min_metadata_quality: float = Field(default=0.85, env="MIN_METADATA_QUALITY")
-    max_processing_time_seconds: int = Field(default=30, env="MAX_PROCESSING_TIME_SECONDS")
-    max_memory_usage_mb: int = Field(default=2048, env="MAX_MEMORY_USAGE_MB")
-    
-    # Processing pipeline configuration
-    enable_multimodal_processing: bool = Field(default=True, env="ENABLE_MULTIMODAL_PROCESSING")
-    enable_table_extraction: bool = Field(default=True, env="ENABLE_TABLE_EXTRACTION")
-    enable_image_processing: bool = Field(default=True, env="ENABLE_IMAGE_PROCESSING")
-    enable_math_content_processing: bool = Field(default=True, env="ENABLE_MATH_CONTENT_PROCESSING")
-    
-    # Logging configuration
-    log_level: str = Field(default="INFO", env="LOG_LEVEL")
-    log_file: str = Field(default="./logs/rag_prep.log", env="LOG_FILE")
-    enable_structured_logging: bool = Field(default=True, env="ENABLE_STRUCTURED_LOGGING")
-    
-    # Development settings
-    debug_mode: bool = Field(default=False, env="DEBUG_MODE")
-    enable_profiling: bool = Field(default=False, env="ENABLE_PROFILING")
-    save_intermediate_results: bool = Field(default=True, env="SAVE_INTERMEDIATE_RESULTS")
-    test_mode: bool = Field(default=False, env="TEST_MODE")
-    
-    # Output configuration
-    output_format: str = Field(default="json", env="OUTPUT_FORMAT")
-    save_chunks_to_disk: bool = Field(default=True, env="SAVE_CHUNKS_TO_DISK")
-    chunks_output_dir: str = Field(default="./output/chunks", env="CHUNKS_OUTPUT_DIR")
-    metadata_output_dir: str = Field(default="./output/metadata", env="METADATA_OUTPUT_DIR")
-    
-    # Performance tuning
-    batch_size: int = Field(default=10, env="BATCH_SIZE")
-    max_workers: int = Field(default=4, env="MAX_WORKERS")
-    enable_caching: bool = Field(default=True, env="ENABLE_CACHING")
-    cache_ttl_hours: int = Field(default=24, env="CACHE_TTL_HOURS")
     
     class Config:
         env_file = ".env"
@@ -145,133 +247,151 @@ class Config(BaseSettings):
         case_sensitive = False
     
     def __init__(self, config_path: Optional[str] = None, **kwargs):
-        """Initialize configuration with optional YAML file."""
+        """Initialize configuration with optional config file path."""
         super().__init__(**kwargs)
         
         if config_path:
-            self._load_yaml_config(config_path)
+            self.config_path = config_path
         
-        self._setup_defaults()
-        self._validate_config()
+        # Load configuration from file if available
+        if self.config_path and Path(self.config_path).exists():
+            self._load_yaml_config()
+        
+        # Setup logging
+        self._setup_logging()
     
-    def _load_yaml_config(self, config_path: str):
+    def _load_yaml_config(self) -> None:
         """Load configuration from YAML file."""
         try:
-            with open(config_path, 'r', encoding='utf-8') as f:
-                yaml_config = yaml.safe_load(f)
-                self._update_from_dict(yaml_config)
+            with open(self.config_path, 'r', encoding='utf-8') as file:
+                yaml_data = yaml.safe_load(file)
+                
+            if yaml_data:
+                # Update document processing configuration
+                if 'document_processing' in yaml_data:
+                    self.document_processing = DocumentProcessingConfig(**yaml_data['document_processing'])
+                    
+                logger.info(f"Configuration loaded from {self.config_path}")
+                
         except Exception as e:
-            raise ValueError(f"Failed to load configuration from {config_path}: {e}")
+            logger.warning(f"Failed to load YAML configuration: {e}")
     
-    def _update_from_dict(self, config_dict: Dict[str, Any]):
-        """Update configuration from dictionary."""
-        for key, value in config_dict.items():
-            if hasattr(self, key):
-                if isinstance(value, dict) and hasattr(getattr(self, key), '__dict__'):
-                    # Update nested objects
-                    current = getattr(self, key)
-                    for k, v in value.items():
-                        if hasattr(current, k):
-                            setattr(current, k, v)
-                else:
-                    setattr(self, key, value)
-    
-    def _setup_defaults(self):
-        """Set up default configuration values."""
-        # Ensure output directories exist
-        os.makedirs(self.chunks_output_dir, exist_ok=True)
-        os.makedirs(self.metadata_output_dir, exist_ok=True)
-        os.makedirs(os.path.dirname(self.log_file), exist_ok=True)
+    def _setup_logging(self) -> None:
+        """Setup logging configuration."""
+        log_config = self.document_processing.logging
         
-        # Set up logging
-        if self.enable_structured_logging:
-            self.logging.format = "structured"
-    
-    def _validate_config(self):
-        """Validate configuration values."""
-        if self.default_chunk_size <= 0:
-            raise ValueError("default_chunk_size must be positive")
+        # Configure logging level
+        logging.getLogger().setLevel(getattr(logging, log_config.level))
         
-        if self.default_chunk_overlap < 0:
-            raise ValueError("default_chunk_overlap must be non-negative")
+        # Configure formatter
+        formatter = logging.Formatter(log_config.format)
         
-        if self.default_chunk_overlap >= self.default_chunk_size:
-            raise ValueError("default_chunk_overlap must be less than default_chunk_size")
+        # Configure console handler
+        console_handler = logging.StreamHandler()
+        console_handler.setFormatter(formatter)
+        logging.getLogger().addHandler(console_handler)
         
-        if not (0 <= self.temperature <= 2):
-            raise ValueError("temperature must be between 0 and 2")
-        
-        if self.min_content_accuracy < 0 or self.min_content_accuracy > 1:
-            raise ValueError("min_content_accuracy must be between 0 and 1")
+        # Configure file handler if specified
+        if log_config.file:
+            file_handler = logging.FileHandler(log_config.file)
+            file_handler.setFormatter(formatter)
+            logging.getLogger().addHandler(file_handler)
     
-    def get_parser_config(self, file_extension: str) -> Dict[str, Any]:
-        """Get parser configuration for specific file type."""
-        extension = file_extension.lower().lstrip('.')
-        return self.document_processing.supported_formats.get(extension, {})
+    def is_format_supported(self, format_name: str) -> bool:
+        """Check if a document format is supported."""
+        return format_name.lower() in self.document_processing.supported_formats
     
-    def get_chunking_config(self, strategy: str) -> Dict[str, Any]:
-        """Get chunking configuration for specific strategy."""
-        return self.document_processing.chunking.strategies.get(strategy, {})
+    def get_parser_config(self, format_name: str) -> Optional[ParserConfig]:
+        """Get parser configuration for a specific format."""
+        format_name = format_name.lower()
+        if format_name in self.document_processing.supported_formats:
+            return self.document_processing.supported_formats[format_name]
+        return None
     
-    def get_metadata_config(self, document_type: str) -> Dict[str, Any]:
-        """Get metadata extraction configuration for document type."""
-        return self.document_processing.metadata_extraction.extraction_schemas.get(
-            document_type, 
-            self.document_processing.metadata_extraction.extraction_schemas.get("general", {})
-        )
+    def get_chunking_config(self) -> ChunkingConfig:
+        """Get chunking configuration."""
+        return self.document_processing.chunking
     
-    def is_format_supported(self, file_extension: str) -> bool:
-        """Check if file format is supported."""
-        extension = file_extension.lower().lstrip('.')
-        return extension in self.document_processing.supported_formats
+    def get_metadata_config(self) -> MetadataConfig:
+        """Get metadata extraction configuration."""
+        return self.document_processing.metadata
     
-    def get_supported_formats(self) -> list:
-        """Get list of supported file formats."""
-        return list(self.document_processing.supported_formats.keys())
+    def get_multimodal_config(self) -> MultimodalConfig:
+        """Get multimodal processing configuration."""
+        return self.document_processing.multimodal
+    
+    def get_quality_config(self) -> QualityConfig:
+        """Get quality assurance configuration."""
+        return self.document_processing.quality
+    
+    def get_performance_config(self) -> PerformanceConfig:
+        """Get performance configuration."""
+        return self.document_processing.performance
+    
+    def get_output_config(self) -> OutputConfig:
+        """Get output configuration."""
+        return self.document_processing.output
+    
+    def get_vector_db_config(self) -> VectorDBConfig:
+        """Get vector database configuration."""
+        # This would be loaded from a separate config section
+        # For now, return default configuration
+        return VectorDBConfig()
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert configuration to dictionary."""
         return {
-            "document_processing": self.document_processing.dict(),
-            "multimodal_processing": self.multimodal_processing.dict(),
-            "vector_database": self.vector_database.dict(),
-            "quality_assurance": self.quality_assurance.dict(),
-            "performance": self.performance.dict(),
-            "output": self.output.dict(),
-            "logging": self.logging.dict(),
-            "default_chunk_size": self.default_chunk_size,
-            "default_chunk_overlap": self.default_chunk_overlap,
-            "max_document_size_mb": self.max_document_size_mb,
-            "supported_formats": self.supported_formats,
-            "default_llm_model": self.default_llm_model,
-            "default_embedding_model": self.default_embedding_model,
-            "max_tokens": self.max_tokens,
-            "temperature": self.temperature,
-            "vector_db_type": self.vector_db_type,
-            "chroma_persist_directory": self.chroma_persist_directory,
-            "embedding_dimension": self.embedding_dimension,
-            "min_content_accuracy": self.min_content_accuracy,
-            "min_structure_preservation": self.min_structure_preservation,
-            "min_metadata_quality": self.min_metadata_quality,
-            "max_processing_time_seconds": self.max_processing_time_seconds,
-            "max_memory_usage_mb": self.max_memory_usage_mb,
-            "enable_multimodal_processing": self.enable_multimodal_processing,
-            "enable_table_extraction": self.enable_table_extraction,
-            "enable_image_processing": self.enable_image_processing,
-            "enable_math_content_processing": self.enable_math_content_processing,
-            "log_level": self.log_level,
-            "log_file": self.log_file,
-            "enable_structured_logging": self.enable_structured_logging,
-            "debug_mode": self.debug_mode,
-            "enable_profiling": self.enable_profiling,
-            "save_intermediate_results": self.save_intermediate_results,
-            "test_mode": self.test_mode,
-            "output_format": self.output_format,
-            "save_chunks_to_disk": self.save_chunks_to_disk,
-            "chunks_output_dir": self.chunks_output_dir,
-            "metadata_output_dir": self.metadata_output_dir,
-            "batch_size": self.batch_size,
-            "max_workers": self.max_workers,
-            "enable_caching": self.enable_caching,
-            "cache_ttl_hours": self.cache_ttl_hours
+            "openai_api_key": self.openai_api_key,
+            "pinecone_api_key": self.pinecone_api_key,
+            "weaviate_url": self.weaviate_url,
+            "chroma_host": self.chroma_host,
+            "chroma_port": self.chroma_port,
+            "document_processing": self.document_processing.dict()
         }
+    
+    def validate_config(self) -> List[str]:
+        """Validate configuration and return list of errors."""
+        errors = []
+        
+        try:
+            # Validate document processing configuration
+            self.document_processing.validate()
+            
+            # Check for required API keys based on configuration
+            if (self.document_processing.metadata.extraction_level == "llm_powered" and 
+                not self.openai_api_key):
+                errors.append("OpenAI API key required for LLM-powered metadata extraction")
+            
+            # Validate output directories
+            output_config = self.document_processing.output
+            for dir_path in [output_config.output_dir, output_config.chunk_dir, 
+                           output_config.metadata_dir, output_config.embedding_dir]:
+                if not os.path.exists(dir_path):
+                    try:
+                        os.makedirs(dir_path, exist_ok=True)
+                    except Exception as e:
+                        errors.append(f"Failed to create directory {dir_path}: {e}")
+            
+        except Exception as e:
+            errors.append(f"Configuration validation failed: {e}")
+        
+        return errors
+
+
+# Global configuration instance
+_config_instance: Optional[Config] = None
+
+
+def get_config(config_path: Optional[str] = None) -> Config:
+    """Get global configuration instance."""
+    global _config_instance
+    if _config_instance is None:
+        _config_instance = Config(config_path)
+    return _config_instance
+
+
+def reload_config(config_path: Optional[str] = None) -> Config:
+    """Reload configuration from file."""
+    global _config_instance
+    _config_instance = Config(config_path)
+    return _config_instance
