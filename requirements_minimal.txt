@@ -1,0 +1,23 @@
+# Minimal requirements for RAG Document Processing Utility
+# Core dependencies only - excludes heavy ML libraries for initial setup
+
+# Configuration and validation
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+pyyaml>=6.0
+pathlib2>=2.3.0
+
+# Basic utilities
+python-dotenv>=1.0.0
+jsonschema>=4.0.0
+
+# Logging and monitoring
+loguru>=0.7.0
+rich>=13.0.0
+
+# File handling
+pathlib2>=2.3.0
+
+# Testing (optional)
+pytest>=7.0.0
+pytest-cov>=4.0.0
