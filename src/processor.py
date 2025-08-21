@@ -12,12 +12,12 @@ from pathlib import Path
 from typing import List, Dict, Any, Optional
 from dataclasses import dataclass
 
-from .config import Config
-from .parsers import get_document_parser, ParsedContent
-from .chunkers import get_document_chunker, DocumentChunk
-from .metadata_extractors import get_metadata_extractor
-from .quality_assessment import get_quality_assessment_system
-from .security import SecurityManager
+from config import Config
+from parsers import get_document_parser, ParsedContent
+from chunkers import get_document_chunker, DocumentChunk
+from metadata_extractors import get_metadata_extractor
+from quality_assessment import get_quality_assessment_system
+from security import SecurityManager
 
 
 @dataclass
@@ -44,7 +44,7 @@ class DocumentProcessor:
         # Initialize pipeline components using factories/concrete classes
         self.parser = get_document_parser(config_path)
         self.chunker = get_document_chunker(
-            self.config.chunking.default_strategy, 
+            self.config.chunking.strategy, 
             config_path
         )
         self.metadata_extractor = get_metadata_extractor(
@@ -58,7 +58,7 @@ class DocumentProcessor:
         
         # Initialize vector store
         try:
-            from .vector_store import get_vector_store
+            from vector_store import get_vector_store
             self.vector_store = get_vector_store("file", self.config)  # Default to file-based store
             self.logger.info("Vector store initialized successfully")
         except Exception as e:
@@ -102,14 +102,14 @@ class DocumentProcessor:
             
             # 2. Chunk document
             self.logger.info("Chunking document content")
-            chunk_result = self.chunker.chunk(parse_result.parsed_content)
+            chunk_result = self.chunker.chunk(parse_result.content)
             
             if not chunk_result.success:
                 return ProcessingResult(
                     success=False,
                     document_id=document_id,
                     chunks=[],
-                    metadata=parse_result.parsed_content.metadata,
+                    metadata=parse_result.content.metadata,
                     quality_score=0.0,
                     processing_time=time.time() - start_time,
                     error_message=f"Chunking failed: {chunk_result.error_message}"
@@ -118,21 +118,21 @@ class DocumentProcessor:
             # 3. Extract metadata
             self.logger.info("Extracting metadata")
             metadata_result = self.metadata_extractor.extract(
-                parse_result.parsed_content,
+                parse_result.content,
                 chunk_result.chunks
             )
             
             if not metadata_result.success:
                 self.logger.warning(f"Metadata extraction failed: {metadata_result.error_message}")
                 # Continue with basic metadata if extraction fails
-                metadata = parse_result.parsed_content.metadata
+                metadata = parse_result.content.metadata
             else:
-                metadata = metadata_result.extracted_metadata
+                metadata = metadata_result.metadata
             
             # 4. Assess quality
             self.logger.info("Assessing document quality")
             quality_result = self.quality_system.assess_quality(
-                parse_result.parsed_content,
+                parse_result.content,
                 chunk_result.chunks,
                 metadata_result
             )
@@ -142,7 +142,21 @@ class DocumentProcessor:
             if self.vector_store:
                 try:
                     self.logger.info("Storing chunks in vector database")
-                    chunk_ids = self.vector_store.store_chunks(chunk_result.chunks)
+                    # Convert DocumentChunk objects to dictionaries
+                    chunk_dicts = []
+                    for chunk in chunk_result.chunks:
+                        chunk_dict = {
+                            'chunk_id': chunk.chunk_id,
+                            'document_id': document_id,
+                            'content': chunk.content,
+                            'chunk_type': chunk.chunk_type,
+                            'quality_score': chunk.quality_score,
+                            'metadata': chunk.metadata,
+                            'created_at': str(chunk.metadata.get('timestamp', 'unknown'))
+                        }
+                        chunk_dicts.append(chunk_dict)
+                    
+                    chunk_ids = self.vector_store.store_chunks(chunk_dicts)
                 except NotImplementedError:
                     self.logger.warning("Vector storage not yet implemented")
                 except Exception as e:

@@ -63,6 +63,10 @@ class DocumentChunker(ABC):
         self.chunking_config = config.get_chunking_config()
         self.chunker_name: str = self.__class__.__name__
     
+    def chunk(self, parsed_content: ParsedContent) -> ChunkingResult:
+        """Chunk the parsed document content (alias for chunk_document)."""
+        return self.chunk_document(parsed_content)
+    
     @abstractmethod
     def chunk_document(self, parsed_content: ParsedContent) -> ChunkingResult:
         """Chunk the parsed document content."""
@@ -636,6 +640,10 @@ class HybridChunker(DocumentChunker):
         self.structural_chunker = StructuralChunker(config)
         self.semantic_chunker = SemanticChunker(config)
         self.fixed_chunker = FixedSizeChunker(config)
+    
+    def chunk(self, parsed_content: ParsedContent) -> ChunkingResult:
+        """Chunk document using hybrid strategy (alias for chunk_document)."""
+        return self.chunk_document(parsed_content)
     
     def chunk_document(self, parsed_content: ParsedContent) -> ChunkingResult:
         """Chunk document using hybrid strategy."""

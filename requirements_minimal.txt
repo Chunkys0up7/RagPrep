@@ -18,6 +18,9 @@ rich>=13.0.0
 # File handling
 pathlib2>=2.3.0
 
+# Security (optional for basic functionality)
+python-magic>=0.4.27
+
 # Testing (optional)
 pytest>=7.0.0
 pytest-cov>=4.0.0

@@ -1,0 +1,11 @@
+{
+  "chunk_id": "sample_chunk_001",
+  "content": "This is a sample document chunk demonstrating the RAG Document Processing Utility.",
+  "chunk_type": "text",
+  "quality_score": 0.95,
+  "metadata": {
+    "source": "test_document.txt",
+    "chunk_number": 1,
+    "word_count": 15
+  }
+}

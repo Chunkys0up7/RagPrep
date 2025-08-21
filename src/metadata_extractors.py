@@ -103,6 +103,10 @@ class MetadataExtractor(ABC):
         self.metadata_config = config.get_metadata_config()
         self.extractor_name: str = self.__class__.__name__
     
+    def extract(self, content: Union[str, ParsedContent, DocumentChunk], chunks: List[DocumentChunk]) -> ExtractionResult:
+        """Extract metadata from content (alias for extract_metadata)."""
+        return self.extract_metadata(content)
+    
     @abstractmethod
     def extract_metadata(self, content: Union[str, ParsedContent, DocumentChunk]) -> ExtractionResult:
         """Extract metadata from content."""

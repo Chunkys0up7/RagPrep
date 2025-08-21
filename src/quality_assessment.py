@@ -931,6 +931,10 @@ class QualityAssessmentSystem:
         self.performance_monitor = PerformanceMonitor(config)
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
     
+    def assess_quality(self, content: Any, chunks: List[DocumentChunk], metadata_result: Any) -> QualityReport:
+        """Perform comprehensive quality assessment on document content (alias for assess_document_quality)."""
+        return self.assess_document_quality(content)
+    
     def assess_document_quality(self, content: Any) -> QualityReport:
         """Perform comprehensive quality assessment on document content."""
         operation_id = self.performance_monitor.start_operation("quality_assessment")

@@ -686,6 +686,10 @@ class CascadingDocumentParser:
             formats.update(parser.supported_formats)
         return sorted(list(formats))
     
+    def parse(self, file_path: str) -> ParserResult:
+        """Parse document using cascading parser strategy (alias for parse_document)."""
+        return self.parse_document(file_path)
+    
     def parse_document(self, file_path: str) -> ParserResult:
         """Parse document using cascading parser strategy."""
         file_path = str(file_path)

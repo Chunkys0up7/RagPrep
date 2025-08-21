@@ -12,7 +12,7 @@ from pathlib import Path
 import json
 import pickle
 
-from .config import Config
+from config import Config
 
 
 class VectorStore(ABC):
@@ -127,6 +127,10 @@ class FileBasedVectorStore(VectorStore):
     def get_total_chunks(self) -> int:
         """Get total number of chunks in the store."""
         return len(self.chunks)
+    
+    def get_total_documents(self) -> int:
+        """Get total number of documents in the store."""
+        return len(self.metadata)
     
     def close(self):
         """Close the vector store (save data to disk)."""

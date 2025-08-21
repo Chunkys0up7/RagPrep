@@ -1,0 +1,170 @@
+{
+  "chunk_0000_f35ab235": {
+    "chunk_id": "chunk_0000_f35ab235",
+    "document_id": "2ee6c43639c5b5ee",
+    "content": "# RAG Document Processing Utility - Test Document\n\n## Introduction\n\nThis is a comprehensive test document designed to validate the RAG Document Processing Utility. The document contains various types of content including headings, paragraphs, lists, and structured information to test different chunking strategies.\n\n## Document Structure\n\nThe document is organized into several main sections:\n1. Overview and Purpose\n2. Technical Specifications\n3. Implementation Details\n4. Testing Scenarios\n5. Expected Outcomes\n\n## Overview and Purpose\n\nThe RAG Document Processing Utility is designed to transform various document formats into an optimized structure for Retrieval-Augmented Generation (RAG) applications. It implements a multi-stage, intelligence-enhanced pipeline that includes parsing, chunking, metadata extraction, quality assessment, and vector storage capabilities.",
+    "chunk_type": "fixed_size",
+    "quality_score": 0.87,
+    "metadata": {
+      "chunk_index": 0,
+      "chunk_type": "fixed_size",
+      "content_length": 875,
+      "word_count": 113,
+      "sentence_count": 10,
+      "paragraph_count": 12,
+      "chunker": "FixedSizeChunker",
+      "timestamp": 1755790729.3589618,
+      "start_position": 0,
+      "end_position": 875,
+      "overlap_size": 200
+    },
+    "created_at": "1755790729.3589618"
+  },
+  "chunk_0001_b1616ef9": {
+    "chunk_id": "chunk_0001_b1616ef9",
+    "document_id": "2ee6c43639c5b5ee",
+    "content": "ed Generation (RAG) applications. It implements a multi-stage, intelligence-enhanced pipeline that includes parsing, chunking, metadata extraction, quality assessment, and vector storage capabilities.\n\n### Key Features\n\n- **Multi-format Support**: Handles PDF, DOCX, TXT, HTML, and Markdown files\n- **Intelligent Chunking**: Multiple strategies including fixed-size, structural, semantic, and hybrid approaches\n- **LLM-Powered Metadata**: Advanced metadata extraction using OpenAI and other language models\n- **Quality Assessment**: Comprehensive quality evaluation and monitoring\n- **Security First**: File validation, sanitization, and threat detection\n- **Vector Storage**: Integration with ChromaDB, Pinecone, Weaviate, and FAISS\n\n## Technical Specifications\n\n### Architecture\n\nThe system follows a modular design pattern with clear separation of concerns:\n\n- **Configuration System**: Pydantic-based configuration management with environment variable support\n- **Document Parsers**: Cascading st",
+    "chunk_type": "fixed_size",
+    "quality_score": 1.0,
+    "metadata": {
+      "chunk_index": 1,
+      "chunk_type": "fixed_size",
+      "content_length": 1000,
+      "word_count": 119,
+      "sentence_count": 3,
+      "paragraph_count": 13,
+      "chunker": "FixedSizeChunker",
+      "timestamp": 1755790729.3590598,
+      "start_position": 675,
+      "end_position": 1675,
+      "overlap_size": 200
+    },
+    "created_at": "1755790729.3590598"
+  },
+  "chunk_0002_a60d888b": {
+    "chunk_id": "chunk_0002_a60d888b",
+    "document_id": "2ee6c43639c5b5ee",
+    "content": "a modular design pattern with clear separation of concerns:\n\n- **Configuration System**: Pydantic-based configuration management with environment variable support\n- **Document Parsers**: Cascading strategy with multiple fallback options\n- **Document Chunkers**: Multiple strategies with quality-based selection\n- **Metadata Extractors**: LLM-powered extraction with fallback mechanisms\n- **Quality Assessment**: Multi-dimensional evaluation and monitoring\n- **Security Module**: Comprehensive file and content security validation\n\n### Design Patterns\n\n- **Factory Pattern**: For creating parser, chunker, and extractor instances\n- **Strategy Pattern**: For different chunking and extraction approaches\n- **Observer Pattern**: For quality monitoring and performance tracking\n- **Template Method**: For defining processing workflows\n\n### Data Flow\n\n1. **Input Validation** → Security checks and file validation\n2. **Document Parsing** → Multi-format parsing with fallbacks\n3.",
+    "chunk_type": "fixed_size",
+    "quality_score": 0.909,
+    "metadata": {
+      "chunk_index": 2,
+      "chunk_type": "fixed_size",
+      "content_length": 973,
+      "word_count": 119,
+      "sentence_count": 4,
+      "paragraph_count": 16,
+      "chunker": "FixedSizeChunker",
+      "timestamp": 1755790729.3591273,
+      "start_position": 1475,
+      "end_position": 2449,
+      "overlap_size": 200
+    },
+    "created_at": "1755790729.3591273"
+  },
+  "chunk_0003_e2715b44": {
+    "chunk_id": "chunk_0003_e2715b44",
+    "document_id": "2ee6c43639c5b5ee",
+    "content": "- **Template Method**: For defining processing workflows\n\n### Data Flow\n\n1. **Input Validation** → Security checks and file validation\n2. **Document Parsing** → Multi-format parsing with fallbacks\n3. **Content Chunking** → Intelligent chunking strategy selection\n4. **Metadata Extraction** → LLM-enhanced metadata generation\n5. **Quality Assessment** → Multi-dimensional quality evaluation\n6. **Vector Storage** → Embedding generation and storage\n\n## Implementation Details\n\n### Configuration Management\n\nThe system uses Pydantic for robust, type-safe configuration management. All settings are validated at runtime and can be loaded from YAML files or environment variables.\n\n### Security Features\n\n- File type validation and sanitization\n- Content analysis for security threats\n- Executable, script, and macro detection\n- Comprehensive security testing suite\n\n### Performance Monitoring\n\n- Real-time performance tracking\n- Memory and CPU usage monitoring\n- Quality metrics and continuous improveme",
+    "chunk_type": "fixed_size",
+    "quality_score": 1.0,
+    "metadata": {
+      "chunk_index": 3,
+      "chunk_type": "fixed_size",
+      "content_length": 999,
+      "word_count": 133,
+      "sentence_count": 9,
+      "paragraph_count": 20,
+      "chunker": "FixedSizeChunker",
+      "timestamp": 1755790729.3592148,
+      "start_position": 2249,
+      "end_position": 3249,
+      "overlap_size": 200
+    },
+    "created_at": "1755790729.3592148"
+  },
+  "chunk_0004_37e1fa68": {
+    "chunk_id": "chunk_0004_37e1fa68",
+    "document_id": "2ee6c43639c5b5ee",
+    "content": "t, and macro detection\n- Comprehensive security testing suite\n\n### Performance Monitoring\n\n- Real-time performance tracking\n- Memory and CPU usage monitoring\n- Quality metrics and continuous improvement\n- Automated recommendations\n\n## Testing Scenarios\n\n### Scenario 1: Basic Text Processing\n\nThis document should be processed successfully through the entire pipeline:\n- Parsing should extract text content and structure\n- Chunking should create meaningful chunks based on headings\n- Metadata extraction should identify entities, topics, and relationships\n- Quality assessment should evaluate content completeness and structure\n\n### Scenario 2: Chunking Strategy Testing\n\nThe document contains various heading levels and content types to test:\n- **Fixed-size chunking**: Should respect size limits and overlap\n- **Structural chunking**: Should group content by heading hierarchy\n- **Semantic chunking**: Should identify topic boundaries\n- **Hybrid chunking**: Should combine multiple strategies intel",
+    "chunk_type": "fixed_size",
+    "quality_score": 1.0,
+    "metadata": {
+      "chunk_index": 4,
+      "chunk_type": "fixed_size",
+      "content_length": 1000,
+      "word_count": 135,
+      "sentence_count": 1,
+      "paragraph_count": 20,
+      "chunker": "FixedSizeChunker",
+      "timestamp": 1755790729.3592908,
+      "start_position": 3049,
+      "end_position": 4049,
+      "overlap_size": 200
+    },
+    "created_at": "1755790729.3592908"
+  },
+  "chunk_0005_0ed33b59": {
+    "chunk_id": "chunk_0005_0ed33b59",
+    "document_id": "2ee6c43639c5b5ee",
+    "content": "d overlap\n- **Structural chunking**: Should group content by heading hierarchy\n- **Semantic chunking**: Should identify topic boundaries\n- **Hybrid chunking**: Should combine multiple strategies intelligently\n\n### Scenario 3: Metadata Extraction\n\nThe content includes:\n- Technical terms and concepts\n- Named entities (RAG, OpenAI, ChromaDB)\n- Relationships between components\n- Structured information suitable for summarization\n\n### Scenario 4: Quality Assessment\n\nThe document should score well on:\n- Content completeness (covers all major topics)\n- Structure integrity (clear heading hierarchy)\n- Metadata accuracy (extractable entities and topics)\n- Overall quality (comprehensive and well-organized)\n\n## Expected Outcomes\n\n### Processing Results\n\n1. **Successful Parsing**: Document should be parsed without errors\n2. **Meaningful Chunks**: Chunks should preserve semantic meaning and structure\n3. **Rich Metadata**: Extracted metadata should include entities, topics, and relationships\n4.",
+    "chunk_type": "fixed_size",
+    "quality_score": 0.917,
+    "metadata": {
+      "chunk_index": 5,
+      "chunk_type": "fixed_size",
+      "content_length": 993,
+      "word_count": 129,
+      "sentence_count": 5,
+      "paragraph_count": 22,
+      "chunker": "FixedSizeChunker",
+      "timestamp": 1755790729.3593526,
+      "start_position": 3849,
+      "end_position": 4842,
+      "overlap_size": 200
+    },
+    "created_at": "1755790729.3593526"
+  },
+  "chunk_0006_72bbaa49": {
+    "chunk_id": "chunk_0006_72bbaa49",
+    "document_id": "2ee6c43639c5b5ee",
+    "content": "be parsed without errors\n2. **Meaningful Chunks**: Chunks should preserve semantic meaning and structure\n3. **Rich Metadata**: Extracted metadata should include entities, topics, and relationships\n4. **High Quality Score**: Overall quality should exceed 0.8 (80%)\n5. **Vector Storage**: Chunks should be successfully stored in the vector database\n\n### Performance Metrics\n\n- Processing time should be reasonable (< 30 seconds for this document)\n- Memory usage should be within acceptable limits\n- Quality scores should be consistent across different assessors\n- Security checks should pass without warnings\n\n## Conclusion\n\nThis test document provides a comprehensive foundation for validating the RAG Document Processing Utility. It covers all major functionality areas and should produce high-quality results that demonstrate the system's capabilities.",
+    "chunk_type": "fixed_size",
+    "quality_score": 0.861,
+    "metadata": {
+      "chunk_index": 6,
+      "chunk_type": "fixed_size",
+      "content_length": 853,
+      "word_count": 118,
+      "sentence_count": 8,
+      "paragraph_count": 12,
+      "chunker": "FixedSizeChunker",
+      "timestamp": 1755790729.359413,
+      "start_position": 4642,
+      "end_position": 5496,
+      "overlap_size": 200
+    },
+    "created_at": "1755790729.359413"
+  },
+  "chunk_0007_7ed97ba0": {
+    "chunk_id": "chunk_0007_7ed97ba0",
+    "document_id": "2ee6c43639c5b5ee",
+    "content": "comprehensive foundation for validating the RAG Document Processing Utility. It covers all major functionality areas and should produce high-quality results that demonstrate the system's capabilities.\n\nThe document is designed to test:\n- Text parsing and structure extraction\n- Multiple chunking strategies\n- Metadata extraction capabilities\n- Quality assessment accuracy\n- Overall pipeline performance\n\nSuccessfully processing this document will validate that all critical bug fixes are working correctly and that the system is ready for production use.",
+    "chunk_type": "fixed_size",
+    "quality_score": 0.742,
+    "metadata": {
+      "chunk_index": 7,
+      "chunk_type": "fixed_size",
+      "content_length": 554,
+      "word_count": 76,
+      "sentence_count": 4,
+      "paragraph_count": 8,
+      "chunker": "FixedSizeChunker",
+      "timestamp": 1755790729.359453,
+      "start_position": 5296,
+      "end_position": 6296,
+      "overlap_size": 200
+    },
+    "created_at": "1755790729.359453"
+  }
+}
