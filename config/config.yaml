@@ -1,94 +1,128 @@
 # RAG Document Processing Utility Configuration
-# This file contains the main configuration for the document processing pipeline
+
+# Core Application Settings
+app_name: "RAG Document Processing Utility"
+version: "0.1.0"
+debug: false
 
 # Document Processing Configuration
 document_processing:
-  # Supported document formats and their processing configurations
-  supported_formats:
-    pdf:
-      parsers: [marker, pymupdf, unstructured]
-      priority: 1
-      chunking_strategy: semantic
-      metadata_extraction: enhanced
-    
-    docx:
-      parsers: [python-docx, unstructured]
-      priority: 2
-      chunking_strategy: structural
-      metadata_extraction: basic
-    
-    txt:
-      parsers: [unstructured]
-      priority: 3
-      chunking_strategy: fixed
-      metadata_extraction: basic
-    
-    html:
-      parsers: [beautifulsoup, unstructured]
-      priority: 4
-      chunking_strategy: structural
-      metadata_extraction: basic
-    
-    md:
-      parsers: [unstructured]
-      priority: 5
-      chunking_strategy: structural
-      metadata_extraction: basic
+  max_concurrent_processes: 4
+  enable_batch_processing: true
+  batch_size: 10
+  enable_progress_tracking: true
+  temp_directory: "temp"
+  cleanup_temp_files: true
 
-  # Chunking configuration
-  chunking:
-    strategy: hybrid
-    max_chunk_size: 1000
-    min_chunk_size: 100
-    overlap_size: 200
-    semantic_threshold: 0.7
+# Parser Configuration
+parsers:
+  enable_cascading: true
+  fallback_parser: "text"
+  max_file_size_mb: 100
+  enable_ocr: true
+  ocr_language: "eng"
+  enable_table_extraction: true
+  enable_image_extraction: true
 
-  # Metadata extraction configuration
-  metadata:
-    extraction_level: enhanced
-    llm_provider: openai
-    entity_recognition: true
-    topic_extraction: true
-    relationship_extraction: true
-    summarization: true
+# Chunking Configuration
+chunking:
+  default_strategy: "hybrid"
+  fixed_size:
+    chunk_size: 1000
+    overlap: 200
+  structural:
+    min_chunk_size: 500
+    max_chunk_size: 2000
+    preserve_headers: true
+  semantic:
+    min_chunk_size: 300
+    max_chunk_size: 1500
+    similarity_threshold: 0.8
+  hybrid:
+    primary_strategy: "structural"
+    fallback_strategy: "fixed_size"
+    quality_threshold: 0.7
 
-  # Multimodal content processing
-  multimodal:
-    image_processing: true
-    table_extraction: true
-    math_processing: true
-    ocr_engine: tesseract
-    table_parser: camelot
+# Metadata Extraction Configuration
+metadata:
+  enable_llm_extraction: true
+  enable_basic_extraction: true
+  llm_model: "gpt-3.5-turbo"
+  max_tokens: 1000
+  temperature: 0.1
+  enable_entity_extraction: true
+  enable_topic_extraction: true
+  enable_relationship_extraction: true
+  enable_summarization: true
+  summary_max_length: 200
 
-  # Quality assurance configuration
-  quality:
-    enable_validation: true
-    content_completeness: true
-    structure_integrity: true
-    metadata_accuracy: true
-    embedding_quality: true
-    performance_monitoring: true
+# Multimodal Processing Configuration
+multimodal:
+  enable_image_processing: true
+  enable_table_processing: true
+  enable_chart_processing: true
+  image_quality_threshold: 0.8
+  table_extraction_method: "camelot"
+  chart_recognition_enabled: true
 
-  # Performance configuration
-  performance:
-    max_workers: 4
-    batch_size: 10
-    memory_limit: "2GB"
-    timeout: 300
+# Quality Assessment Configuration
+quality:
+  enable_quality_assessment: true
+  enable_performance_monitoring: true
+  quality_threshold: 0.8
+  enable_continuous_improvement: true
+  assessment_interval: 100
+  performance_tracking: true
 
-  # Output configuration
-  output:
-    output_dir: "output"
-    chunk_dir: "chunks"
-    metadata_dir: "metadata"
-    embedding_dir: "embeddings"
-    temp_dir: "temp"
-    preserve_structure: true
+# Performance Configuration
+performance:
+  enable_caching: true
+  cache_size_mb: 1000
+  enable_parallel_processing: true
+  max_workers: 4
+  enable_memory_monitoring: true
+  memory_threshold_mb: 2048
 
-  # Logging configuration
-  logging:
-    level: "INFO"
-    format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    file: "logs/rag_prep.log"
-    max_size: "10MB"
-    backup_count: 5
+# Output Configuration
+output:
+  output_directory: "output"
+  chunks_directory: "output/chunks"
+  metadata_directory: "output/metadata"
+  embeddings_directory: "output/embeddings"
+  enable_compression: true
+  compression_format: "gzip"
+  enable_backup: true
+  backup_retention_days: 30
+
+# Logging Configuration
+logging:
+  log_level: "INFO"
+  log_file: "logs/rag_prep.log"
+  max_log_size_mb: 100
+  log_retention_days: 30
+  enable_console_logging: true
+  enable_file_logging: true
+  enable_structured_logging: true
+
+# Security Configuration
+security:
+  max_file_size_mb: 100
+  max_filename_length: 255
+  allowed_file_extensions:
+    - ".pdf"
+    - ".docx"
+    - ".txt"
+    - ".html"
+    - ".md"
+    - ".rtf"
+  allowed_mime_types:
+    - "application/pdf"
+    - "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    - "text/plain"
+    - "text/html"
+    - "text/markdown"
+    - "application/rtf"
+  enable_content_scanning: true
+  enable_file_validation: true
+  enable_filename_sanitization: true
+  threat_level_threshold: "medium"

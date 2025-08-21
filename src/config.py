@@ -191,6 +191,31 @@ class LoggingConfig(BaseModel):
         return v.upper()
 
 
+class SecurityConfig(BaseModel):
+    """Security configuration settings."""
+    max_file_size_mb: int = Field(default=100, ge=1, le=1000, description="Maximum file size in MB")
+    max_filename_length: int = Field(default=255, ge=1, le=1000, description="Maximum filename length")
+    allowed_file_extensions: List[str] = Field(
+        default=[".pdf", ".docx", ".txt", ".html", ".md", ".rtf"],
+        description="Allowed file extensions"
+    )
+    allowed_mime_types: List[str] = Field(
+        default=[
+            "application/pdf",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "text/plain",
+            "text/html",
+            "text/markdown",
+            "application/rtf"
+        ],
+        description="Allowed MIME types"
+    )
+    enable_content_scanning: bool = Field(default=True, description="Enable content scanning for threats")
+    enable_file_validation: bool = Field(default=True, description="Enable file validation")
+    enable_filename_sanitization: bool = Field(default=True, description="Enable filename sanitization")
+    threat_level_threshold: str = Field(default="medium", description="Minimum threat level to block files")
+
+
 class DocumentProcessingConfig(BaseModel):
     """Configuration for document processing."""
     supported_formats: Dict[str, ParserConfig] = Field(
@@ -226,20 +251,72 @@ class DocumentProcessingConfig(BaseModel):
 
 
 class Config(BaseSettings):
-    """Main configuration class for the RAG document processing utility."""
+    """Main configuration class for the RAG Document Processing Utility."""
     
-    # Environment variable fields
-    openai_api_key: Optional[str] = Field(default=None, env="OPENAI_API_KEY")
-    pinecone_api_key: Optional[str] = Field(default=None, env="PINECONE_API_KEY")
-    weaviate_url: Optional[str] = Field(default=None, env="WEAVIATE_URL")
-    chroma_host: Optional[str] = Field(default="localhost", env="CHROMA_HOST")
-    chroma_port: int = Field(default=8000, env="CHROMA_PORT")
+    # Core settings
+    app_name: str = Field(default="RAG Document Processing Utility", description="Application name")
+    version: str = Field(default="0.1.0", description="Application version")
+    debug: bool = Field(default=False, description="Enable debug mode")
     
-    # Configuration file path
-    config_path: Optional[str] = Field(default="config/config.yaml", env="CONFIG_PATH")
+    # Document processing settings
+    document_processing: DocumentProcessingConfig = Field(
+        default_factory=DocumentProcessingConfig,
+        description="Document processing configuration"
+    )
     
-    # Document processing configuration
-    document_processing: DocumentProcessingConfig = Field(default_factory=DocumentProcessingConfig)
+    # Parser settings
+    parsers: ParserConfig = Field(
+        default_factory=ParserConfig,
+        description="Document parser configuration"
+    )
+    
+    # Chunking settings
+    chunking: ChunkingConfig = Field(
+        default_factory=ChunkingConfig,
+        description="Document chunking configuration"
+    )
+    
+    # Metadata extraction settings
+    metadata: MetadataConfig = Field(
+        default_factory=MetadataConfig,
+        description="Metadata extraction configuration"
+    )
+    
+    # Multimodal processing settings
+    multimodal: MultimodalConfig = Field(
+        default_factory=MultimodalConfig,
+        description="Multimodal processing configuration"
+    )
+    
+    # Quality assessment settings
+    quality: QualityConfig = Field(
+        default_factory=QualityConfig,
+        description="Quality assessment configuration"
+    )
+    
+    # Performance settings
+    performance: PerformanceConfig = Field(
+        default_factory=PerformanceConfig,
+        description="Performance configuration"
+    )
+    
+    # Output settings
+    output: OutputConfig = Field(
+        default_factory=OutputConfig,
+        description="Output configuration"
+    )
+    
+    # Logging settings
+    logging: LoggingConfig = Field(
+        default_factory=LoggingConfig,
+        description="Logging configuration"
+    )
+    
+    # Security settings
+    security: SecurityConfig = Field(
+        default_factory=SecurityConfig,
+        description="Security configuration"
+    )
     
     class Config:
         env_file = ".env"
