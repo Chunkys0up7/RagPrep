@@ -14,8 +14,8 @@ from typing import Dict, Any, List, Optional, Union, Tuple
 from dataclasses import dataclass
 import hashlib
 
-from .config import Config, get_config
-from .parsers import ParsedContent
+from config import Config, get_config
+from parsers import ParsedContent
 
 logger = logging.getLogger(__name__)
 

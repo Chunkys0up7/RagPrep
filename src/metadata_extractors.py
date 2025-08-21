@@ -14,9 +14,9 @@ from typing import Dict, Any, List, Optional, Union, Tuple
 from dataclasses import dataclass
 import re
 
-from .config import Config, get_config
-from .parsers import ParsedContent
-from .chunkers import DocumentChunk
+from config import Config, get_config
+from parsers import ParsedContent
+from chunkers import DocumentChunk
 
 logger = logging.getLogger(__name__)
 

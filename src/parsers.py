@@ -13,7 +13,7 @@ from typing import Dict, Any, List, Optional, Union, Tuple
 from dataclasses import dataclass
 import traceback
 
-from .config import Config, get_config
+from config import Config, get_config
 
 logger = logging.getLogger(__name__)
 
