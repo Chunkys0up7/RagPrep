@@ -13,7 +13,7 @@ def test_config_creation():
     assert config.version == "0.1.0"
     assert config.parser.supported_formats == [".pdf", ".docx", ".txt", ".html"]
     assert config.chunking.strategy == "hybrid"
-    assert config.metadata.extraction_level == "enhanced"
+    assert config.metadata.extraction_level == "advanced"
     assert config.security.enable_file_validation is True
 
 

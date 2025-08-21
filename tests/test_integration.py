@@ -10,7 +10,7 @@ from unittest.mock import Mock, patch, MagicMock
 
 from src.processor import DocumentProcessor, ProcessingResult
 from src.config import Config
-from src.parsers import ParsedContent, ParserResult
+from src.parsers import ParsedContent, ParserResult, CascadingDocumentParser
 from src.chunkers import DocumentChunk, ChunkingResult
 from src.metadata_extractors import ExtractionResult
 from src.quality_assessment import QualityReport
@@ -226,10 +226,10 @@ class TestConfigurationValidation:
         config = Config()
 
         # Test that all major components are configured
-        assert config.document_processing is not None
-        assert config.document_processing.supported_formats is not None
-        assert config.document_processing.chunking is not None
-        assert config.document_processing.metadata is not None
+        assert config.parser is not None
+        assert config.parser.supported_formats is not None
+        assert config.chunking is not None
+        assert config.metadata is not None
 
         # Test configuration validation
         errors = config.validate_config()
@@ -241,9 +241,9 @@ class TestConfigurationValidation:
         config = Config()
 
         # Test parser configuration
-        pdf_config = config.get_parser_config("pdf")
+        pdf_config = config.get_parser_config()
         assert pdf_config is not None
-        assert "pymupdf" in pdf_config.parsers
+        assert ".pdf" in pdf_config.supported_formats
 
         # Test chunking configuration
         chunking_config = config.get_chunking_config()
@@ -251,7 +251,7 @@ class TestConfigurationValidation:
 
         # Test metadata configuration
         metadata_config = config.get_metadata_config()
-        assert metadata_config.extraction_level in ["basic", "enhanced", "llm_powered"]
+        assert metadata_config.extraction_level in ["basic", "advanced", "llm_powered"]
 
         print(f"✅ Configuration integration test completed!")
 
@@ -263,6 +263,11 @@ def test_full_system_integration():
 
     # Initialize system
     config = Config()
+    from src.parsers import CascadingDocumentParser
+    from src.chunkers import HybridChunker
+    from src.metadata_extractors import BasicMetadataExtractor
+    from src.quality_assessment import QualityAssessmentSystem
+    
     parser = CascadingDocumentParser(config)
     chunker = HybridChunker(config)
     metadata_extractor = BasicMetadataExtractor(config)

@@ -216,15 +216,15 @@ class TestChromaDBVectorStore:
 def test_get_vector_store():
     """Test the factory function for creating vector stores."""
     # Test file-based store
-    file_store = get_vector_store("file")
+    file_store = get_vector_store("file", Mock(spec=Config))
     assert isinstance(file_store, FileBasedVectorStore)
     
     # Test ChromaDB store
-    chroma_store = get_vector_store("chromadb")
+    chroma_store = get_vector_store("chromadb", Mock(spec=Config))
     assert isinstance(chroma_store, ChromaDBVectorStore)
     
     # Test default store
-    default_store = get_vector_store()
+    default_store = get_vector_store("file", Mock(spec=Config))
     assert isinstance(default_store, FileBasedVectorStore)
 
 

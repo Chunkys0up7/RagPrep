@@ -3,6 +3,9 @@ Tests for quality assessment system
 """
 
 import pytest
+import time
+import tempfile
+import os
 from unittest.mock import Mock, patch, MagicMock
 from datetime import datetime
 
@@ -21,7 +24,7 @@ from src.quality_assessment import (
 from src.config import Config
 from src.parsers import ParsedContent, ParserResult
 from src.chunkers import ChunkingResult, DocumentChunk
-from src.metadata_extractors import ExtractionResult
+from src.metadata_extractors import ExtractionResult, Entity, Topic
 
 
 class TestQualityMetric:

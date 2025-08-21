@@ -37,12 +37,12 @@ class TestFastAPIEndpoints:
         assert "message" in data
         assert "version" in data
 
-    @patch('src.api.DocumentProcessorAPI')
-    def test_upload_document(self, mock_api_class):
+    @patch('src.api.DocumentProcessor')
+    def test_upload_document(self, mock_processor_class):
         """Test document upload endpoint."""
-        # Mock the API
-        mock_api = Mock()
-        mock_api.process_single_document.return_value = {
+        # Mock the processor
+        mock_processor = Mock()
+        mock_processor.process_single_document.return_value = {
             "success": True,
             "document_id": "doc123",
             "chunks": [],
@@ -50,7 +50,7 @@ class TestFastAPIEndpoints:
             "quality_score": 0.9,
             "processing_time": 1.5
         }
-        mock_api_class.return_value = mock_api
+        mock_processor_class.return_value = mock_processor
         
         # Create a temporary test file
         with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as f:
@@ -72,12 +72,12 @@ class TestFastAPIEndpoints:
         finally:
             os.unlink(temp_file_path)
 
-    @patch('src.api.DocumentProcessorAPI')
-    def test_process_document(self, mock_api_class):
+    @patch('src.api.DocumentProcessor')
+    def test_process_document(self, mock_processor_class):
         """Test document processing endpoint."""
-        # Mock the API
-        mock_api = Mock()
-        mock_api.process_single_document.return_value = {
+        # Mock the processor
+        mock_processor = Mock()
+        mock_processor.process_single_document.return_value = {
             "success": True,
             "document_id": "doc123",
             "chunks": [],
@@ -85,7 +85,7 @@ class TestFastAPIEndpoints:
             "quality_score": 0.9,
             "processing_time": 1.5
         }
-        mock_api_class.return_value = mock_api
+        mock_processor_class.return_value = mock_processor
         
         # Create a temporary test file
         with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as f:
@@ -107,12 +107,12 @@ class TestFastAPIEndpoints:
         finally:
             os.unlink(temp_file_path)
 
-    @patch('src.api.DocumentProcessorAPI')
-    def test_batch_process(self, mock_api_class):
+    @patch('src.api.DocumentProcessor')
+    def test_batch_process(self, mock_processor_class):
         """Test batch processing endpoint."""
-        # Mock the API
-        mock_api = Mock()
-        mock_api.process_batch_documents.return_value = {
+        # Mock the processor
+        mock_processor = Mock()
+        mock_processor.process_batch_documents.return_value = {
             "success": True,
             "processed_documents": [
                 {"success": True, "document_id": "doc1"},
@@ -122,7 +122,7 @@ class TestFastAPIEndpoints:
             "successful_documents": 2,
             "failed_documents": 0
         }
-        mock_api_class.return_value = mock_api
+        mock_processor_class.return_value = mock_processor
         
         # Create temporary test files
         temp_files = []
