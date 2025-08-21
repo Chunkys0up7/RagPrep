@@ -11,6 +11,8 @@ A sophisticated document processing utility that transforms various document for
 - **Quality Assurance**: Comprehensive validation at every processing stage
 - **Vector Database Integration**: Multi-index strategy for efficient retrieval
 - **Automated Pipeline**: GitHub Actions integration for continuous processing
+- **🔒 Security First**: File validation, sanitization, and threat detection
+- **✅ Production Ready**: All critical bugs fixed and comprehensive testing completed
 
 ## 🏗️ Architecture
 
@@ -80,6 +82,43 @@ RAGPrep/
 
 ## 🚀 Quick Start
 
+### 🎯 **NEW: One-Click Demo (Recommended)**
+
+**Windows Users:**
+```bash
+# Double-click to run:
+start_demo.bat
+
+# OR from command line:
+start_demo.bat
+```
+
+**Linux/macOS Users:**
+```bash
+# Make executable and run:
+chmod +x start_demo.sh
+./start_demo.sh
+```
+
+**Python Users (Any Platform):**
+```bash
+# Automated setup and demo:
+python quick_start.py
+
+# OR manual demo:
+python demo.py
+```
+
+### 📋 What the Demo Shows
+- ✅ Configuration system validation
+- ✅ Security features demonstration
+- ✅ Document processing pipeline
+- ✅ Batch processing capabilities
+- ✅ Quality assessment system
+- ✅ Vector storage functionality
+
+### 🔧 Manual Setup (Alternative)
+
 1. **Open the development notebook**
    - Navigate to `notebooks/01_document_analysis.ipynb`
    - Follow the step-by-step guide
@@ -93,6 +132,10 @@ RAGPrep/
    - Try different chunking strategies
    - Experiment with metadata extraction
    - Test multimodal content processing
+
+### 📚 **NEW: Demo Documentation**
+- **`DEMO_README.md`** - Comprehensive demo guide with troubleshooting
+- **`STARTUP_SUMMARY.md`** - Quick reference for all startup methods
 
 ## 📚 Documentation
 
