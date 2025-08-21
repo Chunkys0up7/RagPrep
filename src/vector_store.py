@@ -5,12 +5,13 @@ This module provides concrete implementations of the VectorStore abstract base c
 for different vector database backends.
 """
 
+from abc import ABC, abstractmethod
+from typing import Any, Dict, List, Optional
+
 import json
 import logging
 import pickle
-from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Dict, List, Optional
 
 from config import Config
 

@@ -5,13 +5,14 @@ This module provides comprehensive file validation, sanitization, and content an
 for security purposes.
 """
 
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional, Union
+
 import hashlib
 import logging
 import mimetypes
 import re
-from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
 
 # Try to import magic, but provide fallback for Windows
 try:

@@ -3,20 +3,28 @@ Tests for document parsers
 """
 
 import os
+import pytest
+
 # Add src to path for imports
 import sys
 import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, Mock, patch
 
-import pytest
-
 sys.path.append(str(Path(__file__).parent.parent / "src"))
 
 from config import Config
-from parsers import (CascadingDocumentParser, DocumentParser, DOCXParser,
-                     HTMLParser, ParsedContent, ParserResult, PDFParser,
-                     TextParser, get_document_parser)
+from parsers import (
+    CascadingDocumentParser,
+    DocumentParser,
+    DOCXParser,
+    HTMLParser,
+    ParsedContent,
+    ParserResult,
+    PDFParser,
+    TextParser,
+    get_document_parser,
+)
 
 
 class TestDocumentParser:

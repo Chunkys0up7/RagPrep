@@ -3,19 +3,27 @@ Tests for configuration management
 """
 
 import os
+import pytest
+
 # Add src to path for imports
 import sys
 import tempfile
-from pathlib import Path
-
-import pytest
 import yaml
+from pathlib import Path
 
 sys.path.append(str(Path(__file__).parent.parent / "src"))
 
-from config import (ChunkingConfig, Config, LoggingConfig, MetadataConfig,
-                    MultimodalConfig, OutputConfig, ParserConfig,
-                    PerformanceConfig, QualityConfig)
+from config import (
+    ChunkingConfig,
+    Config,
+    LoggingConfig,
+    MetadataConfig,
+    MultimodalConfig,
+    OutputConfig,
+    ParserConfig,
+    PerformanceConfig,
+    QualityConfig,
+)
 
 
 class TestConfig:

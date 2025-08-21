@@ -1,5 +1,6 @@
 import json
 import os
+import pytest
 import sys
 import tempfile
 import time
@@ -7,21 +8,24 @@ from datetime import datetime
 from pathlib import Path
 from unittest.mock import MagicMock, Mock, patch
 
-import pytest
-
 sys.path.append(str(Path(__file__).parent.parent / "src"))
 
 from chunkers import ChunkingResult, DocumentChunk
 from config import Config
-from metadata_extractors import (Entity, ExtractionResult, Relationship,
-                                 Summary, Topic)
+from metadata_extractors import Entity, ExtractionResult, Relationship, Summary, Topic
 from parsers import ParsedContent, ParserResult
-from quality_assessment import (ContentCompletenessAssessor,
-                                MetadataAccuracyAssessor, PerformanceMetrics,
-                                PerformanceMonitor, QualityAssessmentSystem,
-                                QualityAssessor, QualityMetric, QualityReport,
-                                StructureIntegrityAssessor,
-                                get_quality_assessment_system)
+from quality_assessment import (
+    ContentCompletenessAssessor,
+    MetadataAccuracyAssessor,
+    PerformanceMetrics,
+    PerformanceMonitor,
+    QualityAssessmentSystem,
+    QualityAssessor,
+    QualityMetric,
+    QualityReport,
+    StructureIntegrityAssessor,
+    get_quality_assessment_system,
+)
 
 
 class TestQualityMetric:

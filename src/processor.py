@@ -5,11 +5,12 @@ This module provides the main DocumentProcessor class that orchestrates
 the complete document processing workflow.
 """
 
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional
+
 import logging
 import time
-from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional
 
 from chunkers import DocumentChunk, get_document_chunker
 from config import Config

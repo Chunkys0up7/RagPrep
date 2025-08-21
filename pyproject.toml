@@ -1,0 +1,29 @@
+[tool.black]
+line-length = 88
+target-version = ['py38', 'py39', 'py310', 'py311', 'py312']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
+known_first_party = ["src"]
+known_third_party = ["pytest", "unittest", "pathlib", "tempfile", "os", "sys", "json", "yaml", "logging", "time", "hashlib", "mimetypes", "re", "subprocess", "shutil", "zipfile", "tarfile", "gzip", "bz2", "lzma", "pickle", "sqlite3", "sqlalchemy", "alembic", "cryptography", "jose", "click", "typer", "fastapi", "uvicorn", "requests", "pandas", "numpy", "matplotlib", "sympy", "pillow", "opencv", "pytesseract", "easyocr", "clip", "camelot", "tabula", "pdfplumber", "pymupdf", "marker", "unstructured", "python-docx", "beautifulsoup4", "openai", "langchain", "transformers", "torch", "sentence-transformers", "chromadb", "pinecone", "weaviate", "faiss", "psutil", "memory-profiler", "tqdm", "pathlib2", "watchdog", "loguru", "rich", "jupyter", "jupyterlab", "ipykernel", "pytest", "pytest-cov", "pytest-mock", "mkdocs", "mkdocs-material", "mkdocstrings", "python-magic", "yara-python", "safety", "bandit", "pip-audit"]
+known_stdlib = ["abc", "collections", "contextlib", "dataclasses", "enum", "functools", "inspect", "io", "itertools", "operator", "pathlib", "tempfile", "typing", "unittest", "urllib", "weakref"]
+sections = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
+default_section = "THIRDPARTY"

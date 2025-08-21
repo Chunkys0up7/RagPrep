@@ -5,19 +5,24 @@ Tests file validation, sanitization, content analysis, and security management.
 """
 
 import os
+import pytest
 import sys
 import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, Mock, patch
 
-import pytest
-
 # Add src to path for imports
 sys.path.append(str(Path(__file__).parent.parent / "src"))
 
 from config import Config
-from security import (ContentAnalyzer, FileSanitizer, FileSecurityProfile,
-                      FileValidator, SecurityCheck, SecurityManager)
+from security import (
+    ContentAnalyzer,
+    FileSanitizer,
+    FileSecurityProfile,
+    FileValidator,
+    SecurityCheck,
+    SecurityManager,
+)
 
 
 class TestSecurityCheck:

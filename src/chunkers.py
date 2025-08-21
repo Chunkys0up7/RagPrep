@@ -5,14 +5,15 @@ This module implements intelligent document chunking with multiple strategies.
 It provides semantic, structural, fixed-size, and hybrid chunking approaches.
 """
 
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional, Tuple, Union
+
 import hashlib
 import logging
 import re
 import time
-from abc import ABC, abstractmethod
-from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
 
 from config import Config, get_config
 from parsers import ParsedContent

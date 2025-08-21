@@ -4,23 +4,30 @@ Tests for metadata extractors
 
 import json
 import os
+import pytest
+
 # Add src to path for imports
 import sys
 import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, Mock, patch
 
-import pytest
-
 sys.path.append(str(Path(__file__).parent.parent / "src"))
 
 from chunkers import DocumentChunk
 from config import Config
-from metadata_extractors import (BasicMetadataExtractor, Entity,
-                                 ExtractionResult, LLMMetadataExtractor,
-                                 MetadataExtractor, MetadataExtractorFactory,
-                                 Relationship, Summary, Topic,
-                                 get_metadata_extractor)
+from metadata_extractors import (
+    BasicMetadataExtractor,
+    Entity,
+    ExtractionResult,
+    LLMMetadataExtractor,
+    MetadataExtractor,
+    MetadataExtractorFactory,
+    Relationship,
+    Summary,
+    Topic,
+    get_metadata_extractor,
+)
 from parsers import ParsedContent
 
 

@@ -5,14 +5,15 @@ This module implements LLM-powered metadata extraction with entity recognition,
 topic extraction, relationship mapping, and content summarization.
 """
 
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional, Tuple, Union
+
 import json
 import logging
 import re
 import time
-from abc import ABC, abstractmethod
-from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
 
 from chunkers import DocumentChunk
 from config import Config, get_config

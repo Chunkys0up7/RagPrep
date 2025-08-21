@@ -2,18 +2,25 @@
 Tests for document chunkers
 """
 
+import pytest
 import sys
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-import pytest
-
 # Add src to path for imports
 sys.path.append(str(Path(__file__).parent.parent / "src"))
 
-from chunkers import (ChunkingResult, DocumentChunk, DocumentChunker,
-                      DocumentChunkerFactory, FixedSizeChunker, HybridChunker,
-                      SemanticChunker, StructuralChunker, get_document_chunker)
+from chunkers import (
+    ChunkingResult,
+    DocumentChunk,
+    DocumentChunker,
+    DocumentChunkerFactory,
+    FixedSizeChunker,
+    HybridChunker,
+    SemanticChunker,
+    StructuralChunker,
+    get_document_chunker,
+)
 from config import Config
 from parsers import ParsedContent
 

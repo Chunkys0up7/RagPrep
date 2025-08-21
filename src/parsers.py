@@ -5,13 +5,14 @@ This module implements the document parsing system with a cascading parser strat
 It provides parsers for various document formats with fallback mechanisms and error handling.
 """
 
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional, Tuple, Union
+
 import logging
 import os
 import traceback
-from abc import ABC, abstractmethod
-from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
 
 from config import Config, get_config
 

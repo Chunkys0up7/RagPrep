@@ -6,12 +6,11 @@ the complete document processing pipeline.
 """
 
 import os
+import pytest
 import sys
 import tempfile
 from pathlib import Path
 from unittest.mock import Mock, patch
-
-import pytest
 
 sys.path.append(str(Path(__file__).parent.parent / "src"))
 
