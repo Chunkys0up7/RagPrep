@@ -10,10 +10,10 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-from chunkers import ChunkingResult, DocumentChunk
-from config import Config, get_config
-from metadata_extractors import ExtractionResult
-from parsers import ParsedContent, ParserResult
+from .chunkers import ChunkingResult, DocumentChunk
+from .config import Config, get_config
+from .metadata_extractors import ExtractionResult
+from .parsers import ParsedContent, ParserResult
 
 logger = logging.getLogger(__name__)
 

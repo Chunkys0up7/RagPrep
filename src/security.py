@@ -23,7 +23,7 @@ except ImportError:
     MAGIC_AVAILABLE = False
     logging.warning("python-magic not available, using fallback MIME type detection")
 
-from config import Config
+from .config import Config
 
 
 @dataclass

@@ -13,7 +13,7 @@ import logging
 import pickle
 from pathlib import Path
 
-from config import Config
+from .config import Config
 
 
 class VectorStore(ABC):

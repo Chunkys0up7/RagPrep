@@ -15,9 +15,9 @@ import re
 import time
 from pathlib import Path
 
-from chunkers import DocumentChunk
-from config import Config, get_config
-from parsers import ParsedContent
+from .chunkers import DocumentChunk
+from .config import Config, get_config
+from .parsers import ParsedContent
 
 logger = logging.getLogger(__name__)
 

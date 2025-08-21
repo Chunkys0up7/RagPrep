@@ -14,7 +14,7 @@ import os
 import traceback
 from pathlib import Path
 
-from config import Config, get_config
+from .config import Config, get_config
 
 logger = logging.getLogger(__name__)
 
