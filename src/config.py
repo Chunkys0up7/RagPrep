@@ -334,6 +334,9 @@ class Config(BaseSettings):
         description="Security configuration"
     )
     
+    # Configuration file path (not loaded from env)
+    config_path: Optional[str] = Field(default=None, exclude=True)
+    
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

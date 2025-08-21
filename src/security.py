@@ -1,359 +1,376 @@
 """
-Security module for RAG Document Processing Utility.
+Security Module for RAG Document Processing Utility
 
-This module provides comprehensive security measures for handling untrusted input files,
-including validation, sanitization, and security checks.
+This module provides comprehensive file validation, sanitization, and content analysis
+for security purposes.
 """
 
-import os
+import logging
 import hashlib
 import mimetypes
 from pathlib import Path
-from typing import List, Dict, Optional, Tuple, Set
-import magic
-import yara
+from typing import Dict, Any, List, Optional, Union
 from dataclasses import dataclass
-import logging
+import re
 
-logger = logging.getLogger(__name__)
+# Try to import magic, but provide fallback for Windows
+try:
+    import magic
+    MAGIC_AVAILABLE = True
+except ImportError:
+    MAGIC_AVAILABLE = False
+    logging.warning("python-magic not available, using fallback MIME type detection")
+
+from .config import Config
 
 
 @dataclass
 class SecurityCheck:
-    """Result of a security check operation."""
+    """Result of a security check."""
+    check_name: str
     passed: bool
-    threat_level: str  # 'low', 'medium', 'high', 'critical'
     details: str
-    recommendations: List[str]
+    threat_level: str = "low"
 
 
 @dataclass
 class FileSecurityProfile:
-    """Comprehensive security profile for a file."""
+    """Security profile for a file."""
     file_path: Path
-    file_hash: str
-    mime_type: str
-    file_size: int
-    security_checks: List[SecurityCheck]
-    overall_threat_level: str
     is_safe: bool
+    overall_threat_level: str
+    file_size: int
+    mime_type: str
+    file_extension: str
+    security_checks: List[SecurityCheck]
     warnings: List[str]
+    recommendations: List[str]
 
 
 class FileValidator:
-    """Validates file types, sizes, and basic security properties."""
+    """Validates files for security and safety."""
     
-    def __init__(self, config):
+    def __init__(self, config: Config):
+        """Initialize file validator."""
         self.config = config
-        self.max_file_size = config.security.max_file_size_mb * 1024 * 1024
-        self.allowed_extensions = set(config.security.allowed_file_extensions)
-        self.allowed_mime_types = set(config.security.allowed_mime_types)
+        self.logger = logging.getLogger(__name__)
+    
+    def validate_file(self, file_path: Path) -> List[SecurityCheck]:
+        """Perform comprehensive file validation."""
+        checks = []
         
-    def validate_file(self, file_path: Path) -> Tuple[bool, List[str]]:
-        """
-        Validate a file for basic security properties.
-        
-        Args:
-            file_path: Path to the file to validate
-            
-        Returns:
-            Tuple of (is_valid, list_of_errors)
-        """
-        errors = []
-        
-        # Check if file exists
+        # Check file existence
         if not file_path.exists():
-            errors.append(f"File does not exist: {file_path}")
-            return False, errors
-            
+            checks.append(SecurityCheck(
+                check_name="File Existence",
+                passed=False,
+                details="File does not exist",
+                threat_level="high"
+            ))
+            return checks
+        
         # Check file size
         try:
             file_size = file_path.stat().st_size
-            if file_size > self.max_file_size:
-                errors.append(f"File size {file_size} exceeds maximum allowed size {self.max_file_size}")
-        except OSError as e:
-            errors.append(f"Cannot access file size: {e}")
+            max_size = self.config.security.max_file_size_mb * 1024 * 1024
             
+            if file_size > max_size:
+                checks.append(SecurityCheck(
+                    check_name="File Size",
+                    passed=False,
+                    details=f"File size {file_size} exceeds limit {max_size}",
+                    threat_level="medium"
+                ))
+            else:
+                checks.append(SecurityCheck(
+                    check_name="File Size",
+                    passed=True,
+                    details=f"File size {file_size} within limits",
+                    threat_level="low"
+                ))
+        except Exception as e:
+            checks.append(SecurityCheck(
+                check_name="File Size",
+                passed=False,
+                details=f"Could not check file size: {e}",
+                threat_level="medium"
+            ))
+        
         # Check file extension
         file_ext = file_path.suffix.lower()
-        if file_ext not in self.allowed_extensions:
-            errors.append(f"File extension '{file_ext}' is not allowed")
-            
+        if file_ext not in self.config.security.allowed_file_extensions:
+            checks.append(SecurityCheck(
+                check_name="File Extension",
+                passed=False,
+                details=f"Extension {file_ext} not allowed",
+                threat_level="high"
+            ))
+        else:
+            checks.append(SecurityCheck(
+                check_name="File Extension",
+                passed=True,
+                details=f"Extension {file_ext} is allowed",
+                threat_level="low"
+            ))
+        
         # Check MIME type
         try:
-            mime_type, _ = mimetypes.guess_type(str(file_path))
-            if mime_type and mime_type not in self.allowed_mime_types:
-                errors.append(f"MIME type '{mime_type}' is not allowed")
-        except Exception as e:
-            errors.append(f"Could not determine MIME type: {e}")
+            if MAGIC_AVAILABLE:
+                # Use python-magic for accurate MIME detection
+                mime_type = magic.from_file(str(file_path), mime=True)
+            else:
+                # Fallback to mimetypes module
+                mime_type, _ = mimetypes.guess_type(str(file_path))
+                if mime_type is None:
+                    mime_type = "application/octet-stream"
             
-        return len(errors) == 0, errors
+            if mime_type not in self.config.security.allowed_mime_types:
+                checks.append(SecurityCheck(
+                    check_name="MIME Type",
+                    passed=False,
+                    details=f"MIME type {mime_type} not allowed",
+                    threat_level="high"
+                ))
+            else:
+                checks.append(SecurityCheck(
+                    check_name="MIME Type",
+                    passed=True,
+                    details=f"MIME type {mime_type} is allowed",
+                    threat_level="low"
+                ))
+        except Exception as e:
+            checks.append(SecurityCheck(
+                check_name="MIME Type",
+                passed=False,
+                details=f"Could not determine MIME type: {e}",
+                threat_level="medium"
+            ))
+        
+        return checks
 
 
 class FileSanitizer:
-    """Sanitizes file names and content for safe processing."""
+    """Sanitizes filenames and paths for security."""
     
-    def __init__(self, config):
+    def __init__(self, config: Config):
+        """Initialize file sanitizer."""
         self.config = config
-        
+        self.logger = logging.getLogger(__name__)
+    
     def sanitize_filename(self, filename: str) -> str:
-        """
-        Sanitize a filename to prevent path traversal and other attacks.
-        
-        Args:
-            filename: Original filename
-            
-        Returns:
-            Sanitized filename
-        """
-        # Remove path separators and dangerous characters
-        dangerous_chars = ['/', '\\', ':', '*', '?', '"', '<', '>', '|']
+        """Sanitize filename by removing dangerous characters."""
+        # Remove or replace dangerous characters
+        dangerous_chars = ['<', '>', ':', '"', '|', '?', '*', '\\', '/']
         sanitized = filename
         
         for char in dangerous_chars:
             sanitized = sanitized.replace(char, '_')
-            
-        # Remove null bytes and control characters
+        
+        # Remove control characters
         sanitized = ''.join(char for char in sanitized if ord(char) >= 32)
         
         # Limit length
-        max_length = self.config.security.max_filename_length
-        if len(sanitized) > max_length:
-            name, ext = os.path.splitext(sanitized)
-            sanitized = name[:max_length-len(ext)] + ext
-            
-        return sanitized or "unnamed_file"
+        if len(sanitized) > 255:
+            name, ext = sanitized.rsplit('.', 1) if '.' in sanitized else (sanitized, '')
+            sanitized = name[:255-len(ext)-1] + ('.' + ext if ext else '')
         
-    def create_safe_output_path(self, input_path: Path, output_dir: Path) -> Path:
-        """
-        Create a safe output path for processed files.
+        return sanitized
+    
+    def sanitize_path(self, file_path: Path) -> Path:
+        """Sanitize file path for security."""
+        # Resolve to absolute path
+        try:
+            resolved_path = file_path.resolve()
+        except Exception:
+            resolved_path = file_path.absolute()
         
-        Args:
-            input_path: Original input file path
-            output_dir: Output directory
-            
-        Returns:
-            Safe output path
-        """
-        safe_filename = self.sanitize_filename(input_path.name)
-        return output_dir / safe_filename
+        # Check if path is within allowed directories
+        allowed_dirs = [
+            Path.cwd(),
+            Path.cwd() / "documents",
+            Path.cwd() / "output",
+            Path.cwd() / "temp"
+        ]
+        
+        for allowed_dir in allowed_dirs:
+            try:
+                if resolved_path.is_relative_to(allowed_dir):
+                    return resolved_path
+            except ValueError:
+                continue
+        
+        # If not in allowed directories, restrict to current working directory
+        self.logger.warning(f"Path {file_path} not in allowed directories, restricting to CWD")
+        return Path.cwd() / file_path.name
 
 
 class ContentAnalyzer:
-    """Analyzes file content for potential security threats."""
+    """Analyzes file content for security threats."""
     
-    def __init__(self, config):
+    def __init__(self, config: Config):
+        """Initialize content analyzer."""
         self.config = config
-        self.suspicious_patterns = self._load_suspicious_patterns()
+        self.logger = logging.getLogger(__name__)
         
-    def _load_suspicious_patterns(self) -> Dict[str, str]:
-        """Load YARA rules for detecting suspicious content patterns."""
-        patterns = {
-            "executable_content": """
-                rule executable_content {
-                    strings:
-                        $mz_header = "MZ"
-                        $pe_header = "PE"
-                    condition:
-                        $mz_header at 0 and $pe_header at 0x3C
-                }
-            """,
-            "script_content": """
-                rule script_content {
-                    strings:
-                        $php_tag = "<?php"
-                        $js_code = "javascript:"
-                        $vb_code = "vbscript:"
-                    condition:
-                        any of them
-                }
-            """,
-            "macro_content": """
-                rule macro_content {
-                    strings:
-                        $vba_start = "Sub "
-                        $vba_function = "Function "
-                        $vba_macro = "Macro"
-                    condition:
-                        any of them
-                }
-            """
+        # Patterns for detecting potentially dangerous content
+        self.dangerous_patterns = {
+            'executable': [
+                rb'MZ',  # Windows executable
+                rb'\x7fELF',  # Linux executable
+                rb'\xfe\xed\xfa\xce',  # macOS executable
+                rb'#!/',  # Shebang
+            ],
+            'script': [
+                rb'<script',  # HTML script tags
+                rb'javascript:',  # JavaScript protocol
+                rb'vbscript:',  # VBScript protocol
+            ],
+            'macro': [
+                rb'VBA',  # VBA macros
+                rb'Sub ',  # VBA subroutines
+                rb'Function ',  # VBA functions
+            ]
         }
-        return patterns
-        
+    
     def analyze_content(self, file_path: Path) -> List[SecurityCheck]:
-        """
-        Analyze file content for security threats.
-        
-        Args:
-            file_path: Path to the file to analyze
-            
-        Returns:
-            List of security check results
-        """
+        """Analyze file content for security threats."""
         checks = []
         
         try:
-            # Read file content (first 1MB for performance)
+            # Read first few KB for pattern matching
             with open(file_path, 'rb') as f:
-                content = f.read(1024 * 1024)
-                
-            # Check for executable content
-            if content.startswith(b'MZ'):
+                content = f.read(8192)  # Read first 8KB
+            
+            for threat_type, patterns in self.dangerous_patterns.items():
+                for pattern in patterns:
+                    if pattern in content:
+                        checks.append(SecurityCheck(
+                            check_name=f"Content Analysis - {threat_type.title()}",
+                            passed=False,
+                            details=f"Detected {threat_type} pattern in content",
+                            threat_level="high"
+                        ))
+                        break
+                else:
+                    checks.append(SecurityCheck(
+                        check_name=f"Content Analysis - {threat_type.title()}",
+                        passed=True,
+                        details=f"No {threat_type} patterns detected",
+                        threat_level="low"
+                    ))
+            
+            # Check for suspicious file headers
+            if content.startswith(b'PK'):
+                # ZIP file - check for executable content
                 checks.append(SecurityCheck(
-                    passed=False,
-                    threat_level='high',
-                    details="File appears to contain executable content (MZ header detected)",
-                    recommendations=["Reject file", "Scan with antivirus software"]
+                    check_name="Archive Analysis",
+                    passed=True,
+                    details="ZIP archive detected, contents should be validated",
+                    threat_level="medium"
                 ))
-                
-            # Check for script content
-            content_str = content.decode('utf-8', errors='ignore')
-            if any(pattern in content_str.lower() for pattern in ['<?php', 'javascript:', 'vbscript:']):
-                checks.append(SecurityCheck(
-                    passed=False,
-                    threat_level='medium',
-                    details="File contains script-like content",
-                    recommendations=["Review content manually", "Validate script safety"]
-                ))
-                
-            # Check for macro content
-            if any(pattern in content_str.lower() for pattern in ['sub ', 'function ', 'macro']):
-                checks.append(SecurityCheck(
-                    passed=False,
-                    threat_level='medium',
-                    details="File contains macro-like content",
-                    recommendations=["Review content manually", "Validate macro safety"]
-                ))
-                
+            
         except Exception as e:
             checks.append(SecurityCheck(
+                check_name="Content Analysis",
                 passed=False,
-                threat_level='low',
-                details=f"Could not analyze file content: {e}",
-                recommendations=["Review file manually", "Check file permissions"]
+                details=f"Could not analyze content: {e}",
+                threat_level="medium"
             ))
-            
+        
         return checks
 
 
 class SecurityManager:
-    """Main security manager that orchestrates all security checks."""
+    """Main security manager that coordinates all security operations."""
     
-    def __init__(self, config):
+    def __init__(self, config: Config):
+        """Initialize security manager."""
         self.config = config
+        self.logger = logging.getLogger(__name__)
+        
         self.validator = FileValidator(config)
         self.sanitizer = FileSanitizer(config)
         self.analyzer = ContentAnalyzer(config)
-        
+    
     def assess_file_security(self, file_path: Path) -> FileSecurityProfile:
-        """
-        Perform comprehensive security assessment of a file.
+        """Perform comprehensive security assessment of a file."""
+        self.logger.info(f"Assessing security of file: {file_path}")
         
-        Args:
-            file_path: Path to the file to assess
-            
-        Returns:
-            Comprehensive security profile
-        """
-        # Basic validation
-        is_valid, validation_errors = self.validator.validate_file(file_path)
-        
-        # File information
-        try:
-            file_size = file_path.stat().st_size
-            with open(file_path, 'rb') as f:
-                file_hash = hashlib.sha256(f.read()).hexdigest()
-        except Exception as e:
-            logger.error(f"Error getting file info: {e}")
-            file_size = 0
-            file_hash = "unknown"
-            
-        # MIME type
-        try:
-            mime_type, _ = mimetypes.guess_type(str(file_path))
-            mime_type = mime_type or "unknown"
-        except Exception:
-            mime_type = "unknown"
-            
-        # Content analysis
+        # Perform all security checks
+        validation_checks = self.validator.validate_file(file_path)
         content_checks = self.analyzer.analyze_content(file_path)
         
-        # Combine all checks
-        all_checks = []
-        if not is_valid:
-            all_checks.append(SecurityCheck(
-                passed=False,
-                threat_level='high',
-                details=f"File validation failed: {', '.join(validation_errors)}",
-                recommendations=["Fix validation issues", "Review file properties"]
-            ))
-        all_checks.extend(content_checks)
+        all_checks = validation_checks + content_checks
         
         # Determine overall threat level
-        threat_levels = {'low': 0, 'medium': 1, 'high': 2, 'critical': 3}
-        max_threat = max([threat_levels[check.threat_level] for check in all_checks], default=0)
-        overall_threat = [k for k, v in threat_levels.items() if v == max_threat][0]
+        threat_levels = {"low": 0, "medium": 0, "high": 0}
+        for check in all_checks:
+            threat_levels[check.threat_level] += 1
+        
+        if threat_levels["high"] > 0:
+            overall_threat = "high"
+        elif threat_levels["medium"] > 0:
+            overall_threat = "medium"
+        else:
+            overall_threat = "low"
         
         # Determine if file is safe
-        is_safe = all_checks and all(check.passed for check in all_checks)
+        is_safe = all(check.passed for check in all_checks)
         
-        # Collect warnings
-        warnings = []
-        if file_size > self.config.security.max_file_size_mb * 1024 * 1024 * 0.8:  # 80% of max
-            warnings.append("File size approaching maximum limit")
-        if not is_safe:
-            warnings.append("File failed security checks")
+        # Get file metadata
+        try:
+            file_size = file_path.stat().st_size
+            file_ext = file_path.suffix.lower()
             
+            if MAGIC_AVAILABLE:
+                mime_type = magic.from_file(str(file_path), mime=True)
+            else:
+                mime_type, _ = mimetypes.guess_type(str(file_path))
+                if mime_type is None:
+                    mime_type = "application/octet-stream"
+        except Exception as e:
+            self.logger.error(f"Error getting file metadata: {e}")
+            file_size = 0
+            mime_type = "unknown"
+            file_ext = ""
+        
+        # Generate warnings and recommendations
+        warnings = []
+        recommendations = []
+        
+        for check in all_checks:
+            if not check.passed:
+                warnings.append(f"{check.check_name}: {check.details}")
+                
+                if check.threat_level == "high":
+                    recommendations.append("File should not be processed")
+                elif check.threat_level == "medium":
+                    recommendations.append("File should be reviewed before processing")
+        
+        if not warnings:
+            recommendations.append("File is safe for processing")
+        
         return FileSecurityProfile(
             file_path=file_path,
-            file_hash=file_hash,
-            mime_type=mime_type,
-            file_size=file_size,
-            security_checks=all_checks,
-            overall_threat_level=overall_threat,
             is_safe=is_safe,
-            warnings=warnings
+            overall_threat_level=overall_threat,
+            file_size=file_size,
+            mime_type=mime_type,
+            file_extension=file_ext,
+            security_checks=all_checks,
+            warnings=warnings,
+            recommendations=recommendations
         )
-        
+    
     def is_file_safe_for_processing(self, file_path: Path) -> bool:
-        """
-        Quick check if a file is safe for processing.
-        
-        Args:
-            file_path: Path to the file to check
-            
-        Returns:
-            True if file is safe, False otherwise
-        """
-        profile = self.assess_file_security(file_path)
-        return profile.is_safe
-        
-    def get_security_summary(self, files: List[Path]) -> Dict[str, any]:
-        """
-        Get security summary for multiple files.
-        
-        Args:
-            files: List of file paths to assess
-            
-        Returns:
-            Security summary statistics
-        """
-        profiles = [self.assess_file_security(f) for f in files]
-        
-        total_files = len(profiles)
-        safe_files = sum(1 for p in profiles if p.is_safe)
-        threat_levels = [p.overall_threat_level for p in profiles]
-        
-        return {
-            'total_files': total_files,
-            'safe_files': safe_files,
-            'unsafe_files': total_files - safe_files,
-            'threat_level_distribution': {
-                'low': threat_levels.count('low'),
-                'medium': threat_levels.count('medium'),
-                'high': threat_levels.count('high'),
-                'critical': threat_levels.count('critical')
-            },
-            'safety_rate': safe_files / total_files if total_files > 0 else 0
-        }
+        """Quick check if file is safe for processing."""
+        try:
+            profile = self.assess_file_security(file_path)
+            return profile.is_safe
+        except Exception as e:
+            self.logger.error(f"Error checking file safety: {e}")
+            return False
+    
+    def sanitize_file_path(self, file_path: Path) -> Path:
+        """Sanitize file path for safe processing."""
+        return self.sanitizer.sanitize_path(file_path)
