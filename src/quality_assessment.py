@@ -64,8 +64,8 @@ class PerformanceMetrics:
     """Performance monitoring metrics."""
     operation: str
     start_time: float
-    end_time: float
-    duration: float
+    end_time: Optional[float] = None
+    duration: Optional[float] = None
     memory_usage: Optional[float] = None
     cpu_usage: Optional[float] = None
     input_size: Optional[int] = None
@@ -74,7 +74,8 @@ class PerformanceMetrics:
     error_message: Optional[str] = None
     
     def __post_init__(self):
-        self.duration = self.end_time - self.start_time
+        if self.end_time is not None and self.duration is None:
+            self.duration = self.end_time - self.start_time
 
 class QualityAssessor(ABC):
     """Abstract base class for quality assessment strategies."""
@@ -853,13 +854,16 @@ class PerformanceMonitor:
         successful_ops = [m for m in self.metrics if m.success]
         failed_ops = [m for m in self.metrics if not m.success]
         
+        # Calculate durations only for completed operations
+        completed_metrics = [m for m in self.metrics if hasattr(m, 'duration') and m.duration is not None]
+        
         summary = {
             "total_operations": len(self.metrics),
             "successful_operations": len(successful_ops),
             "failed_operations": len(failed_ops),
             "success_rate": len(successful_ops) / len(self.metrics) if self.metrics else 0.0,
-            "average_duration": statistics.mean([m.duration for m in self.metrics if hasattr(m, 'duration')]),
-            "total_duration": sum([m.duration for m in self.metrics if hasattr(m, 'duration')]),
+            "average_duration": statistics.mean([m.duration for m in completed_metrics]) if completed_metrics else 0.0,
+            "total_duration": sum([m.duration for m in completed_metrics]),
             "operations_by_type": {}
         }
         
@@ -877,7 +881,7 @@ class PerformanceMonitor:
             summary["operations_by_type"][op_type]["count"] += 1
             if metric.success:
                 summary["operations_by_type"][op_type]["success_count"] += 1
-            if hasattr(metric, 'duration'):
+            if hasattr(metric, 'duration') and metric.duration is not None:
                 summary["operations_by_type"][op_type]["total_duration"] += metric.duration
         
         # Calculate averages for each operation type
@@ -896,8 +900,8 @@ class PerformanceMonitor:
                 metric_dict = {
                     "operation": metric.operation,
                     "start_time": metric.start_time,
-                    "end_time": metric.end_time if hasattr(metric, 'end_time') else None,
-                    "duration": metric.duration if hasattr(metric, 'duration') else None,
+                    "end_time": getattr(metric, 'end_time', None),
+                    "duration": getattr(metric, 'duration', None),
                     "success": metric.success,
                     "error_message": metric.error_message,
                     "input_size": metric.input_size,

@@ -14,7 +14,8 @@ sys.path.append(str(Path(__file__).parent.parent / "src"))
 
 from metadata_extractors import (
     MetadataExtractor, BasicMetadataExtractor, LLMMetadataExtractor,
-    MetadataExtractorFactory, Entity, Topic, Relationship, Summary, ExtractionResult
+    MetadataExtractorFactory, Entity, Topic, Relationship, Summary, ExtractionResult,
+    get_metadata_extractor
 )
 from parsers import ParsedContent
 from chunkers import DocumentChunk

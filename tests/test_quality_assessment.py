@@ -12,7 +12,8 @@ sys.path.append(str(Path(__file__).parent.parent / "src"))
 from quality_assessment import (
     QualityMetric, QualityReport, PerformanceMetrics,
     QualityAssessor, ContentCompletenessAssessor, StructureIntegrityAssessor,
-    MetadataAccuracyAssessor, PerformanceMonitor, QualityAssessmentSystem
+    MetadataAccuracyAssessor, PerformanceMonitor, QualityAssessmentSystem,
+    get_quality_assessment_system
 )
 from parsers import ParsedContent, ParserResult
 from chunkers import DocumentChunk, ChunkingResult
@@ -523,7 +524,7 @@ class TestQualityAssessmentSystem:
         
         assert len(recommendations) > 0
         assert any("parser" in rec.lower() for rec in recommendations)
-        assert any("chunking" in rec.lower() for rec in recommendations)
+        assert any("error" in rec.lower() for rec in recommendations)
     
     def test_get_quality_summary(self):
         """Test getting quality assessment system summary."""

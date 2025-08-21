@@ -13,7 +13,8 @@ sys.path.append(str(Path(__file__).parent.parent / "src"))
 
 from chunkers import (
     DocumentChunker, FixedSizeChunker, StructuralChunker, SemanticChunker,
-    HybridChunker, DocumentChunkerFactory, DocumentChunk, ChunkingResult
+    HybridChunker, DocumentChunkerFactory, DocumentChunk, ChunkingResult,
+    get_document_chunker
 )
 from parsers import ParsedContent
 from config import Config

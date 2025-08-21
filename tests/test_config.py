@@ -11,7 +11,10 @@ from pathlib import Path
 import sys
 sys.path.append(str(Path(__file__).parent.parent / "src"))
 
-from config import Config, ParserConfig, ChunkingConfig, MetadataConfig
+from config import (
+    Config, ParserConfig, ChunkingConfig, MetadataConfig, MultimodalConfig,
+    QualityConfig, PerformanceConfig, OutputConfig, LoggingConfig
+)
 
 
 class TestConfig:

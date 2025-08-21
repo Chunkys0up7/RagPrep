@@ -13,7 +13,7 @@ sys.path.append(str(Path(__file__).parent.parent / "src"))
 
 from parsers import (
     DocumentParser, PDFParser, DOCXParser, TextParser, HTMLParser,
-    CascadingDocumentParser, ParsedContent, ParserResult
+    CascadingDocumentParser, ParsedContent, ParserResult, get_document_parser
 )
 from config import Config
 
