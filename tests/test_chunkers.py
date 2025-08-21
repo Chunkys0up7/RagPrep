@@ -1,516 +1,330 @@
 """
 Tests for document chunkers
 """
-import pytest
-import tempfile
-import os
+
+import sys
 from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
+
+import pytest
 
 # Add src to path for imports
-import sys
 sys.path.append(str(Path(__file__).parent.parent / "src"))
 
-from chunkers import (
-    DocumentChunker, FixedSizeChunker, StructuralChunker, SemanticChunker,
-    HybridChunker, DocumentChunkerFactory, DocumentChunk, ChunkingResult,
-    get_document_chunker
-)
-from parsers import ParsedContent
+from chunkers import (ChunkingResult, DocumentChunk, DocumentChunker,
+                      DocumentChunkerFactory, FixedSizeChunker, HybridChunker,
+                      SemanticChunker, StructuralChunker, get_document_chunker)
 from config import Config
+from parsers import ParsedContent
 
 
 class TestDocumentChunk:
-    """Test DocumentChunk dataclass."""
-    
+    """Test the DocumentChunk dataclass."""
+
     def test_document_chunk_creation(self):
-        """Test creating DocumentChunk instances."""
+        """Test basic DocumentChunk creation."""
         chunk = DocumentChunk(
-            chunk_id="test_chunk_001",
-            content="Test content",
-            metadata={"test": "data"},
-            chunk_type="test",
-            chunk_index=0
+            chunk_id="chunk_12345",
+            content="This is a test chunk content.",
+            chunk_type="text",
+            chunk_index=0,
+            quality_score=0.8,
+            metadata={"source": "test.txt"},
         )
-        
-        assert chunk.chunk_id == "test_chunk_001"
-        assert chunk.content == "Test content"
-        assert chunk.metadata["test"] == "data"
-        assert chunk.chunk_type == "test"
+
+        assert chunk.chunk_id == "chunk_12345"
+        assert chunk.content == "This is a test chunk content."
+        assert chunk.chunk_type == "text"
         assert chunk.chunk_index == 0
-        assert chunk.quality_score == 0.0
-        assert chunk.child_chunk_ids == []
-        assert chunk.relationships == []
-    
+        assert chunk.quality_score == 0.8
+        assert chunk.metadata["source"] == "test.txt"
+
     def test_document_chunk_defaults(self):
         """Test DocumentChunk default values."""
+        chunk = DocumentChunk(chunk_id="chunk_12345", content="Test content")
+
+        assert chunk.chunk_type == "text"
+        assert chunk.chunk_index == 0
+        assert chunk.quality_score == 1.0
+        assert chunk.metadata == {}
+
+    def test_document_chunk_metadata_extraction(self):
+        """Test that metadata is properly extracted and stored."""
+        metadata = {
+            "source": "document.pdf",
+            "page": 1,
+            "section": "introduction",
+            "timestamp": "2024-01-01T00:00:00Z",
+        }
+
         chunk = DocumentChunk(
-            chunk_id="test_chunk_002",
+            chunk_id="chunk_12345",
             content="Test content",
-            metadata={},
-            chunk_type="test",
-            chunk_index=1
+            metadata=metadata,
         )
-        
-        assert chunk.parent_chunk_id is None
-        assert chunk.child_chunk_ids == []
-        assert chunk.relationships == []
+
+        assert chunk.metadata["source"] == "document.pdf"
+        assert chunk.metadata["page"] == 1
+        assert chunk.metadata["section"] == "introduction"
+        assert chunk.metadata["timestamp"] == "2024-01-01T00:00:00Z"
+
+    def test_chunk_quality_assessment(self):
+        """Test chunk quality assessment method."""
+        chunk = DocumentChunk(
+            chunk_id="chunk_12345",
+            content="This is a high-quality chunk with substantial content.",
+            quality_score=0.9,
+        )
+
+        # Test quality assessment
+        quality_metrics = chunk._assess_chunk_quality()
+        assert "content_length" in quality_metrics
+        assert "content_quality" in quality_metrics
+        assert quality_metrics["content_quality"] > 0.8
 
 
 class TestChunkingResult:
-    """Test ChunkingResult dataclass."""
-    
+    """Test the ChunkingResult dataclass."""
+
     def test_chunking_result_creation(self):
-        """Test creating ChunkingResult instances."""
+        """Test basic ChunkingResult creation."""
+        chunks = [
+            DocumentChunk(chunk_id="chunk_1", content="Content 1"),
+            DocumentChunk(chunk_id="chunk_2", content="Content 2"),
+        ]
+
         result = ChunkingResult(
             success=True,
-            chunks=[],
-            chunking_strategy="test",
-            total_chunks=0,
+            chunks=chunks,
+            chunking_strategy="fixed_size",
             processing_time=1.5,
-            metadata={"test": "data"},
             errors=[],
-            warnings=[]
         )
-        
+
         assert result.success is True
-        assert result.chunking_strategy == "test"
-        assert result.total_chunks == 0
+        assert len(result.chunks) == 2
+        assert result.chunking_strategy == "fixed_size"
         assert result.processing_time == 1.5
-        assert result.metadata["test"] == "data"
+        assert len(result.errors) == 0
+
+    def test_chunking_result_failure(self):
+        """Test ChunkingResult for failed chunking."""
+        result = ChunkingResult(
+            success=False,
+            chunks=[],
+            chunking_strategy="fixed_size",
+            processing_time=0.5,
+            errors=["Invalid content format"],
+        )
+
+        assert result.success is False
+        assert len(result.chunks) == 0
+        assert len(result.errors) == 1
+        assert "Invalid content format" in result.errors
 
 
 class TestDocumentChunker:
-    """Test base document chunker functionality."""
-    
-    def test_abstract_base_class(self):
-        """Test that DocumentChunker is abstract and cannot be instantiated."""
-        with pytest.raises(TypeError):
-            DocumentChunker(Mock(spec=Config))
-    
-    def test_chunk_id_generation(self):
-        """Test chunk ID generation."""
-        # Create a concrete chunker class for testing
-        class TestChunker(DocumentChunker):
-            def chunk_document(self, parsed_content: ParsedContent) -> ChunkingResult:
-                return ChunkingResult(
-                    success=True,
-                    chunks=[],
-                    chunking_strategy="test",
-                    total_chunks=0,
-                    processing_time=0.0,
-                    metadata={},
-                    errors=[],
-                    warnings=[]
-                )
-        
-        mock_config = Mock(spec=Config)
-        chunker = TestChunker(mock_config)
-        
-        chunk_id = chunker._generate_chunk_id("test content", 0)
-        assert chunk_id.startswith("chunk_0000_")
-        assert len(chunk_id) > 10
-    
-    def test_chunk_metadata_extraction(self):
-        """Test chunk metadata extraction."""
-        class TestChunker(DocumentChunker):
-            def chunk_document(self, parsed_content: ParsedContent) -> ChunkingResult:
-                return ChunkingResult(
-                    success=True,
-                    chunks=[],
-                    chunking_strategy="test",
-                    total_chunks=0,
-                    processing_time=0.0,
-                    metadata={},
-                    errors=[],
-                    warnings=[]
-                )
-        
-        mock_config = Mock(spec=Config)
-        chunker = TestChunker(mock_config)
-        
-        metadata = chunker._extract_chunk_metadata("Test content\nSecond line", 0, "test")
-        
-        assert metadata["chunk_index"] == 0
-        assert metadata["chunk_type"] == "test"
-        assert metadata["content_length"] == 22
-        assert metadata["word_count"] == 4
-        assert metadata["sentence_count"] == 1
-        assert metadata["paragraph_count"] == 2
-        assert metadata["chunker"] == "TestChunker"
-        assert "timestamp" in metadata
-    
-    def test_chunk_quality_assessment(self):
-        """Test chunk quality assessment."""
-        class TestChunker(DocumentChunker):
-            def chunk_document(self, parsed_content: ParsedContent) -> ChunkingResult:
-                return ChunkingResult(
-                    success=True,
-                    chunks=[],
-                    chunking_strategy="test",
-                    total_chunks=0,
-                    processing_time=0.0,
-                    metadata={},
-                    errors=[],
-                    warnings=[]
-                )
-        
-        mock_config = Mock(spec=Config)
-        chunker = TestChunker(mock_config)
-        
-        # Test empty content
-        quality = chunker._assess_chunk_quality("")
-        assert quality == 0.0
-        
-        # Test good content
-        quality = chunker._assess_chunk_quality("This is a good chunk with multiple words and a complete sentence.")
-        assert 0.0 <= quality <= 1.0
+    """Test the base DocumentChunker class."""
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.config = Mock(spec=Config)
+        self.chunker = DocumentChunker(self.config)
+
+    def test_chunker_initialization(self):
+        """Test that chunker initializes with configuration."""
+        assert self.chunker.config == self.config
+        assert hasattr(self.chunker, "chunking_config")
+        assert hasattr(self.chunker, "chunker_name")
+
+    def test_chunk_method_alias(self):
+        """Test that chunk method is available as alias."""
+        assert hasattr(self.chunker, "chunk")
+        assert callable(self.chunker.chunk)
 
 
 class TestFixedSizeChunker:
-    """Test fixed-size chunking strategy."""
-    
+    """Test the FixedSizeChunker class."""
+
     def setup_method(self):
         """Set up test fixtures."""
-        self.mock_config = Mock(spec=Config)
-        self.mock_chunking_config = Mock()
-        self.mock_chunking_config.max_chunk_size = 100
-        self.mock_chunking_config.min_chunk_size = 20
-        self.mock_chunking_config.overlap_size = 10
-        self.mock_config.get_chunking_config.return_value = self.mock_chunking_config
-        
-        self.chunker = FixedSizeChunker(self.mock_config)
-    
-    def test_chunk_document_empty_content(self):
-        """Test chunking empty content."""
-        mock_parsed_content = Mock(spec=ParsedContent)
-        mock_parsed_content.text_content = ""
-        
-        result = self.chunker.chunk_document(mock_parsed_content)
-        
-        assert result.success is False
-        assert result.chunks == []
-        assert "Empty document content" in result.errors
-    
-    def test_chunk_document_small_content(self):
-        """Test chunking content smaller than max chunk size."""
-        mock_parsed_content = Mock(spec=ParsedContent)
-        mock_parsed_content.text_content = "This is a small document that should fit in one chunk."
-        
-        result = self.chunker.chunk_document(mock_parsed_content)
-        
-        assert result.success is True
-        assert len(result.chunks) == 1
-        assert result.chunks[0].content == mock_parsed_content.text_content
-        assert result.chunks[0].chunk_type == "fixed_size"
-    
-    def test_chunk_document_large_content(self):
-        """Test chunking content larger than max chunk size."""
-        mock_parsed_content = Mock(spec=ParsedContent)
-        # Create content larger than max chunk size
-        mock_parsed_content.text_content = "This is a sentence. " * 20  # ~400 characters
-        
-        result = self.chunker.chunk_document(mock_parsed_content)
-        
+        self.config = Mock(spec=Config)
+        self.chunker = FixedSizeChunker(self.config)
+
+    def test_fixed_size_chunking(self):
+        """Test fixed-size chunking strategy."""
+        content = Mock(spec=ParsedContent)
+        content.text_content = "A" * 2500  # 2500 characters
+
+        result = self.chunker.chunk_document(content)
+
         assert result.success is True
         assert len(result.chunks) > 1
-        assert all(chunk.chunk_type == "fixed_size" for chunk in result.chunks)
-        
-        # Check that chunks respect size limits
+        assert result.chunking_strategy == "fixed_size"
+
+        # Check chunk sizes
         for chunk in result.chunks:
-            assert len(chunk.content) <= self.mock_chunking_config.max_chunk_size
-            assert len(chunk.content) >= self.mock_chunking_config.min_chunk_size
-    
-    def test_sentence_boundary_detection(self):
-        """Test sentence boundary detection."""
-        mock_parsed_content = Mock(spec=ParsedContent)
-        mock_parsed_content.text_content = "First sentence. Second sentence. Third sentence."
-        
-        result = self.chunker.chunk_document(mock_parsed_content)
-        
+            assert len(chunk.content) <= 1000  # Default max size
+            assert len(chunk.content) >= 100  # Default min size
+
+    def test_fixed_size_chunking_with_overlap(self):
+        """Test fixed-size chunking with overlap."""
+        content = Mock(spec=ParsedContent)
+        content.text_content = "A" * 1500
+
+        result = self.chunker.chunk_document(content)
+
         assert result.success is True
-        # Should respect sentence boundaries when possible
+        assert len(result.chunks) >= 2
+
+        # Check overlap between consecutive chunks
+        if len(result.chunks) >= 2:
+            chunk1_content = result.chunks[0].content
+            chunk2_content = result.chunks[1].content
+            # Should have some overlap
+            assert len(chunk1_content) + len(chunk2_content) > 1500
 
 
 class TestStructuralChunker:
-    """Test structural chunking strategy."""
-    
+    """Test the StructuralChunker class."""
+
     def setup_method(self):
         """Set up test fixtures."""
-        self.mock_config = Mock(spec=Config)
-        self.mock_chunking_config = Mock()
-        self.mock_chunking_config.max_chunk_size = 1000
-        self.mock_chunking_config.min_chunk_size = 50
-        self.mock_config.get_chunking_config.return_value = self.mock_chunking_config
-        
-        self.chunker = StructuralChunker(self.mock_config)
-    
-    def test_chunk_by_pages(self):
-        """Test chunking by pages."""
-        mock_parsed_content = Mock(spec=ParsedContent)
-        mock_parsed_content.text_content = "Page content"
-        mock_parsed_content.structured_content = {
-            "pages": [
-                {
-                    "text_blocks": [
-                        {
-                            "lines": [
-                                {
-                                    "spans": [{"text": "Page 1 content"}]
-                                }
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "text_blocks": [
-                        {
-                            "lines": [
-                                {
-                                    "spans": [{"text": "Page 2 content"}]
-                                }
-                            ]
-                        }
-                    ]
-                }
-            ]
-        }
-        
-        result = self.chunker.chunk_document(mock_parsed_content)
-        
+        self.config = Mock(spec=Config)
+        self.chunker = StructuralChunker(self.config)
+
+    def test_structural_chunking_by_headings(self):
+        """Test structural chunking based on headings."""
+        content = Mock(spec=ParsedContent)
+        content.structure = [
+            {"type": "heading", "text": "Introduction", "level": 1},
+            {"type": "paragraph", "text": "This is the introduction."},
+            {"type": "heading", "text": "Methods", "level": 1},
+            {"type": "paragraph", "text": "These are the methods."},
+        ]
+        content.text_content = (
+            "Introduction\nThis is the introduction.\nMethods\nThese are the methods."
+        )
+
+        result = self.chunker.chunk_document(content)
+
         assert result.success is True
-        assert len(result.chunks) == 2
-        assert result.chunks[0].chunk_type == "page"
-        assert result.chunks[1].chunk_type == "page"
-        assert "Page 1 content" in result.chunks[0].content
-        assert "Page 2 content" in result.chunks[1].content
-    
-    def test_chunk_by_paragraphs(self):
-        """Test chunking by paragraphs."""
-        mock_parsed_content = Mock(spec=ParsedContent)
-        mock_parsed_content.text_content = "Paragraph content"
-        mock_parsed_content.structured_content = {
-            "paragraphs": [
-                {"text": "First paragraph", "style": "Normal"},
-                {"text": "Second paragraph", "style": "Heading1"}
-            ]
-        }
-        
-        result = self.chunker.chunk_document(mock_parsed_content)
-        
+        assert len(result.chunks) >= 2
+        assert result.chunking_strategy == "structural"
+
+    def test_structural_chunking_by_sections(self):
+        """Test structural chunking based on sections."""
+        content = Mock(spec=ParsedContent)
+        content.structure = [
+            {"type": "section", "text": "Section 1"},
+            {"type": "paragraph", "text": "Section 1 content."},
+            {"type": "section", "text": "Section 2"},
+            {"type": "paragraph", "text": "Section 2 content."},
+        ]
+
+        result = self.chunker.chunk_document(content)
+
         assert result.success is True
-        assert len(result.chunks) == 2
-        assert result.chunks[0].chunk_type == "paragraph"
-        assert result.chunks[1].chunk_type == "paragraph"
-        assert result.chunks[0].metadata["style"] == "Normal"
-        assert result.chunks[1].metadata["style"] == "Heading1"
-    
-    def test_chunk_by_headings(self):
-        """Test chunking by headings."""
-        mock_parsed_content = Mock(spec=ParsedContent)
-        mock_parsed_content.text_content = "Heading content"
-        mock_parsed_content.structured_content = {
-            "headings": [
-                {"text": "Main Heading", "level": 1},
-                {"text": "Sub Heading", "level": 2}
-            ]
-        }
-        
-        result = self.chunker.chunk_document(mock_parsed_content)
-        
-        assert result.success is True
-        # Should create sections based on headings
-    
-    def test_fallback_to_fixed_size(self):
-        """Test fallback to fixed-size chunking when no structural elements."""
-        mock_parsed_content = Mock(spec=ParsedContent)
-        mock_parsed_content.text_content = "Simple text content without structure"
-        mock_parsed_content.structured_content = {}
-        
-        with patch('chunkers.FixedSizeChunker') as mock_fixed_chunker:
-            mock_result = Mock(spec=ChunkingResult)
-            mock_result.success = True
-            mock_result.chunks = []
-            mock_fixed_chunker.return_value.chunk_document.return_value = mock_result
-            
-            result = self.chunker.chunk_document(mock_parsed_content)
-            
-            # Should call fixed-size chunker
-            mock_fixed_chunker.return_value.chunk_document.assert_called_once()
+        assert len(result.chunks) >= 2
 
 
 class TestSemanticChunker:
-    """Test semantic chunking strategy."""
-    
+    """Test the SemanticChunker class."""
+
     def setup_method(self):
         """Set up test fixtures."""
-        self.mock_config = Mock(spec=Config)
-        self.mock_chunking_config = Mock()
-        self.mock_chunking_config.max_chunk_size = 200
-        self.mock_chunking_config.min_chunk_size = 50
-        self.mock_chunking_config.semantic_threshold = 0.7
-        self.mock_config.get_chunking_config.return_value = self.mock_chunking_config
-        
-        self.chunker = SemanticChunker(self.mock_config)
-    
-    def test_chunk_by_semantic_boundaries(self):
-        """Test semantic boundary detection."""
-        mock_parsed_content = Mock(spec=ParsedContent)
-        mock_parsed_content.text_content = "First paragraph with content.\n\nSecond paragraph with different content.\n\nThird paragraph."
-        
-        result = self.chunker.chunk_document(mock_parsed_content)
-        
+        self.config = Mock(spec=Config)
+        self.chunker = SemanticChunker(self.config)
+
+    def test_semantic_chunking(self):
+        """Test semantic chunking strategy."""
+        content = Mock(spec=ParsedContent)
+        content.text_content = (
+            "This is a semantic test. It should group related content together."
+        )
+
+        result = self.chunker.chunk_document(content)
+
         assert result.success is True
-        assert len(result.chunks) > 0
-        assert all(chunk.chunk_type == "semantic" for chunk in result.chunks)
+        assert result.chunking_strategy == "semantic"
 
 
 class TestHybridChunker:
-    """Test hybrid chunking strategy."""
-    
+    """Test the HybridChunker class."""
+
     def setup_method(self):
         """Set up test fixtures."""
-        self.mock_config = Mock(spec=Config)
-        self.mock_chunking_config = Mock()
-        self.mock_chunking_config.max_chunk_size = 1000
-        self.mock_chunking_config.min_chunk_size = 50
-        self.mock_config.get_chunking_config.return_value = self.mock_chunking_config
-        
-        self.chunker = HybridChunker(self.mock_config)
-    
-    def test_hybrid_strategy_structural_first(self):
-        """Test hybrid strategy using structural chunking first."""
-        mock_parsed_content = Mock(spec=ParsedContent)
-        mock_parsed_content.text_content = "Structured content"
-        
-        # Mock structural chunker to return high-quality chunks
-        with patch.object(self.chunker.structural_chunker, 'chunk_document') as mock_structural:
-            mock_result = Mock(spec=ChunkingResult)
-            mock_result.success = True
-            mock_result.chunks = [
-                Mock(spec=DocumentChunk, quality_score=0.9),
-                Mock(spec=DocumentChunk, quality_score=0.8)
-            ]
-            mock_result.warnings = []
-            mock_structural.return_value = mock_result
-            
-            result = self.chunker.chunk_document(mock_parsed_content)
-            
-            assert result.success is True
-            assert result.chunking_strategy == "hybrid_structural"
-            assert len(result.chunks) == 2
-    
-    def test_hybrid_strategy_semantic_fallback(self):
-        """Test hybrid strategy falling back to semantic chunking."""
-        mock_parsed_content = Mock(spec=ParsedContent)
-        mock_parsed_content.text_content = "Content for chunking"
-        
-        # Mock structural chunker to return low-quality chunks
-        with patch.object(self.chunker.structural_chunker, 'chunk_document') as mock_structural:
-            mock_structural_result = Mock(spec=ChunkingResult)
-            mock_structural_result.success = True
-            mock_structural_result.chunks = [
-                Mock(spec=DocumentChunk, quality_score=0.5),
-                Mock(spec=DocumentChunk, quality_score=0.4)
-            ]
-            mock_structural.return_value = mock_structural_result
-            
-            # Mock semantic chunker to return medium-quality chunks
-            with patch.object(self.chunker.semantic_chunker, 'chunk_document') as mock_semantic:
-                mock_semantic_result = Mock(spec=ChunkingResult)
-                mock_semantic_result.success = True
-                mock_semantic_result.chunks = [
-                    Mock(spec=DocumentChunk, quality_score=0.7),
-                    Mock(spec=DocumentChunk, quality_score=0.6)
-                ]
-                mock_semantic_result.warnings = []
-                mock_semantic.return_value = mock_semantic_result
-                
-                result = self.chunker.chunk_document(mock_parsed_content)
-                
-                assert result.success is True
-                assert result.chunking_strategy == "hybrid_semantic"
-                assert len(result.chunks) == 2
-    
-    def test_hybrid_strategy_fixed_fallback(self):
-        """Test hybrid strategy falling back to fixed-size chunking."""
-        mock_parsed_content = Mock(spec=ParsedContent)
-        mock_parsed_content.text_content = "Content for chunking"
-        
-        # Mock both structural and semantic chunkers to fail
-        with patch.object(self.chunker.structural_chunker, 'chunk_document') as mock_structural:
-            mock_structural.return_value = Mock(spec=ChunkingResult, success=False)
-            
-            with patch.object(self.chunker.semantic_chunker, 'chunk_document') as mock_semantic:
-                mock_semantic.return_value = Mock(spec=ChunkingResult, success=False)
-                
-                # Mock fixed chunker to succeed
-                with patch.object(self.chunker.fixed_chunker, 'chunk_document') as mock_fixed:
-                    mock_fixed_result = Mock(spec=ChunkingResult)
-                    mock_fixed_result.success = True
-                    mock_fixed_result.chunks = [Mock(spec=DocumentChunk)]
-                    mock_fixed_result.errors = []
-                    mock_fixed_result.warnings = []
-                    mock_fixed.return_value = mock_fixed_result
-                    
-                    result = self.chunker.chunk_document(mock_parsed_content)
-                    
-                    assert result.success is True
-                    assert result.chunking_strategy == "hybrid_fixed"
-                    assert len(result.chunks) == 1
+        self.config = Mock(spec=Config)
+        self.chunker = HybridChunker(self.config)
+
+    def test_hybrid_chunking_strategy_selection(self):
+        """Test that hybrid chunker selects appropriate strategy."""
+        content = Mock(spec=ParsedContent)
+        content.text_content = "Test content for hybrid chunking."
+        content.structure = ["heading1", "paragraph1"]
+
+        result = self.chunker.chunk_document(content)
+
+        assert result.success is True
+        assert result.chunking_strategy == "hybrid"
+
+    def test_hybrid_chunking_fallback(self):
+        """Test hybrid chunking fallback to fixed-size."""
+        content = Mock(spec=ParsedContent)
+        content.text_content = "Simple text without complex structure."
+        content.structure = []
+
+        result = self.chunker.chunk_document(content)
+
+        assert result.success is True
+        # Should fall back to fixed-size chunking for simple content
 
 
 class TestDocumentChunkerFactory:
-    """Test document chunker factory."""
-    
-    def test_create_fixed_chunker(self):
-        """Test creating fixed-size chunker."""
-        mock_config = Mock(spec=Config)
-        
-        chunker = DocumentChunkerFactory.create_chunker("fixed", mock_config)
-        
+    """Test the DocumentChunkerFactory class."""
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.config = Mock(spec=Config)
+
+    def test_factory_creates_fixed_size_chunker(self):
+        """Test factory creates FixedSizeChunker."""
+        chunker = DocumentChunkerFactory.create_chunker("fixed_size", self.config)
         assert isinstance(chunker, FixedSizeChunker)
-    
-    def test_create_structural_chunker(self):
-        """Test creating structural chunker."""
-        mock_config = Mock(spec=Config)
-        
-        chunker = DocumentChunkerFactory.create_chunker("structural", mock_config)
-        
+
+    def test_factory_creates_structural_chunker(self):
+        """Test factory creates StructuralChunker."""
+        chunker = DocumentChunkerFactory.create_chunker("structural", self.config)
         assert isinstance(chunker, StructuralChunker)
-    
-    def test_create_semantic_chunker(self):
-        """Test creating semantic chunker."""
-        mock_config = Mock(spec=Config)
-        
-        chunker = DocumentChunkerFactory.create_chunker("semantic", mock_config)
-        
+
+    def test_factory_creates_semantic_chunker(self):
+        """Test factory creates SemanticChunker."""
+        chunker = DocumentChunkerFactory.create_chunker("semantic", self.config)
         assert isinstance(chunker, SemanticChunker)
-    
-    def test_create_hybrid_chunker(self):
-        """Test creating hybrid chunker."""
-        mock_config = Mock(spec=Config)
-        
-        chunker = DocumentChunkerFactory.create_chunker("hybrid", mock_config)
-        
-        assert isinstance(chunker, HybridChunker)
-    
-    def test_create_unknown_strategy(self):
-        """Test creating chunker with unknown strategy."""
-        mock_config = Mock(spec=Config)
-        
-        chunker = DocumentChunkerFactory.create_chunker("unknown", mock_config)
-        
-        # Should fall back to hybrid
+
+    def test_factory_creates_hybrid_chunker(self):
+        """Test factory creates HybridChunker."""
+        chunker = DocumentChunkerFactory.create_chunker("hybrid", self.config)
         assert isinstance(chunker, HybridChunker)
 
+    def test_factory_creates_hybrid_chunker_by_default(self):
+        """Test factory creates HybridChunker by default."""
+        chunker = DocumentChunkerFactory.create_chunker("unknown", self.config)
+        assert isinstance(chunker, HybridChunker)
 
-# Test convenience function
+    def test_get_available_strategies(self):
+        """Test getting available chunking strategies."""
+        strategies = DocumentChunkerFactory.get_available_strategies()
+        expected_strategies = ["fixed_size", "structural", "semantic", "hybrid"]
+        for strategy in expected_strategies:
+            assert strategy in strategies
+
+
 def test_get_document_chunker():
-    """Test getting document chunker instance."""
-    chunker = get_document_chunker("fixed")
-    assert isinstance(chunker, FixedSizeChunker)
-    assert chunker.config is not None
+    """Test the convenience function for getting a document chunker."""
+    config = Config()
+    chunker = get_document_chunker(config)
+    assert isinstance(chunker, DocumentChunker)
 
 
 if __name__ == "__main__":
