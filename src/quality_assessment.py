@@ -837,14 +837,18 @@ class PerformanceMonitor:
     def end_operation(self, operation_id: str, success: bool = True, 
                      error_message: Optional[str] = None, output_size: Optional[int] = None) -> None:
         """End monitoring an operation."""
-        # Find the metric by operation name and start time
+        found_metric = False
         for metric in reversed(self.metrics):
             if metric.operation in operation_id and not hasattr(metric, 'end_time'):
                 metric.end_time = time.time()
                 metric.success = success
                 metric.error_message = error_message
                 metric.output_size = output_size
+                found_metric = True
                 break
+        
+        if not found_metric:
+            self.logger.warning(f"Operation ID '{operation_id}' not found or already ended. Cannot log end time.")
     
     def get_performance_summary(self) -> Dict[str, Any]:
         """Get a summary of performance metrics."""

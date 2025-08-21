@@ -74,19 +74,32 @@ class ChunkingConfig(BaseModel):
 
 
 class MetadataConfig(BaseModel):
-    """Configuration for metadata extraction."""
+    """Metadata extraction configuration."""
     extraction_level: str = Field(default="enhanced", description="Metadata extraction level")
     llm_provider: str = Field(default="openai", description="LLM provider for enhanced extraction")
+    llm_model: str = Field(default="gpt-3.5-turbo", description="LLM model to use for extraction")
+    llm_temperature: float = Field(default=0.1, description="Temperature for LLM generation")
     entity_recognition: bool = Field(default=True, description="Enable entity recognition")
     topic_extraction: bool = Field(default=True, description="Enable topic extraction")
     relationship_extraction: bool = Field(default=True, description="Enable relationship extraction")
-    summarization: bool = Field(default=True, description="Enable content summarization")
+    summarization: bool = Field(default=True, description="Enable document summarization")
     
     @validator('extraction_level')
     def validate_extraction_level(cls, v):
-        valid_levels = ['basic', 'enhanced', 'llm_powered']
-        if v not in valid_levels:
-            raise ValueError(f'extraction_level must be one of {valid_levels}')
+        if v not in ['basic', 'enhanced']:
+            raise ValueError('extraction_level must be either "basic" or "enhanced"')
+        return v
+    
+    @validator('llm_provider')
+    def validate_llm_provider(cls, v):
+        if v not in ['openai', 'anthropic', 'local']:
+            raise ValueError('llm_provider must be one of: openai, anthropic, local')
+        return v
+    
+    @validator('llm_temperature')
+    def validate_llm_temperature(cls, v):
+        if not 0.0 <= v <= 2.0:
+            raise ValueError('llm_temperature must be between 0.0 and 2.0')
         return v
 
 
@@ -166,13 +179,16 @@ class PerformanceConfig(BaseModel):
 
 
 class OutputConfig(BaseModel):
-    """Configuration for output settings."""
-    output_dir: str = Field(default="output", description="Output directory for processed documents")
-    chunk_dir: str = Field(default="chunks", description="Directory for document chunks")
-    metadata_dir: str = Field(default="metadata", description="Directory for metadata files")
-    embedding_dir: str = Field(default="embeddings", description="Directory for embedding files")
-    temp_dir: str = Field(default="temp", description="Temporary directory for processing")
-    preserve_structure: bool = Field(default=True, description="Preserve original document structure")
+    """Output configuration settings."""
+    output_directory: str = Field(default="output", description="Main output directory")
+    chunks_directory: str = Field(default="output/chunks", description="Directory for document chunks")
+    metadata_directory: str = Field(default="output/metadata", description="Directory for metadata files")
+    embeddings_directory: str = Field(default="output/embeddings", description="Directory for embedding files")
+    vector_store_path: str = Field(default="vector_db", description="Path for vector store data")
+    enable_compression: bool = Field(default=True, description="Enable output compression")
+    compression_format: str = Field(default="gzip", description="Compression format")
+    enable_backup: bool = Field(default=True, description="Enable output backup")
+    backup_retention_days: int = Field(default=30, ge=1, le=365, description="Backup retention period in days")
 
 
 class LoggingConfig(BaseModel):

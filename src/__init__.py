@@ -30,6 +30,9 @@ from .security import (
     SecurityCheck, FileSecurityProfile, FileValidator, FileSanitizer,
     ContentAnalyzer, SecurityManager
 )
+from .vector_store import (
+    VectorStore, FileBasedVectorStore, ChromaDBVectorStore, get_vector_store
+)
 
 __version__ = "0.1.0"
 __author__ = "RAGPrep Team"
@@ -64,4 +67,7 @@ __all__ = [
     # Security
     "SecurityCheck", "FileSecurityProfile", "FileValidator", "FileSanitizer",
     "ContentAnalyzer", "SecurityManager",
+
+    # Vector Storage
+    "VectorStore", "FileBasedVectorStore", "ChromaDBVectorStore", "get_vector_store",
 ]

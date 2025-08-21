@@ -429,11 +429,10 @@ class StructuralChunker(DocumentChunker):
         return chunks
     
     def _chunk_by_headings(self, structured_content: Dict[str, Any], start_index: int) -> List[DocumentChunk]:
-        """Chunk document by headings and their content."""
+        """Chunk content based on heading structure."""
         chunks = []
         headings = structured_content.get("headings", [])
         
-        # Group content by heading levels
         current_section = []
         current_heading = None
         
@@ -465,11 +464,13 @@ class StructuralChunker(DocumentChunker):
                 
                 # Start new section
                 current_heading = heading
-                current_section = [heading["text"]]
+                current_section = [heading["text"]]  # Extract text content from heading dict
             else:
-                # Add content to current section
+                # Add content to current section (assuming it's already text or convertible)
                 if current_section:
-                    current_section.append(str(heading))
+                    # If heading is not a dict, treat it as direct content
+                    content_text = heading["text"] if isinstance(heading, dict) and "text" in heading else str(heading)
+                    current_section.append(content_text)
         
         # Create chunk for the last section
         if current_section and current_heading:

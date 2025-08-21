@@ -106,30 +106,39 @@ class ComprehensiveTestSuite:
             return False
     
     def test_configuration_system(self):
-        """Test configuration system functionality."""
+        """Test configuration system loading and validation."""
         start_time = time.time()
         test_name = "Configuration System Test"
         
         try:
-            # Test configuration loading
+            # Test basic configuration loading
             config = Config()
-            assert config.document_processing is not None
             
             # Test configuration validation
             errors = config.validate_config()
-            # Some errors are expected due to missing API keys
             
-            # Test specific config retrieval
-            pdf_config = config.get_parser_config("pdf")
-            assert pdf_config is not None
+            # Check if we have the expected configuration structure
+            assert hasattr(config, 'document_processing'), "Document processing config missing"
+            assert hasattr(config, 'parsers'), "Parsers config missing"
+            assert hasattr(config, 'chunking'), "Chunking config missing"
+            assert hasattr(config, 'metadata'), "Metadata config missing"
+            assert hasattr(config, 'quality'), "Quality config missing"
+            assert hasattr(config, 'security'), "Security config missing"
             
-            chunking_config = config.get_chunking_config()
-            assert chunking_config.strategy in ["fixed", "structural", "semantic", "hybrid"]
+            # Validate that security configuration is properly loaded
+            assert config.security.max_file_size_mb > 0, "Invalid file size limit"
+            assert len(config.security.allowed_file_extensions) > 0, "No allowed file extensions"
+            assert len(config.security.allowed_mime_types) > 0, "No allowed MIME types"
+            
+            # Test configuration reloading
+            reloaded_config = reload_config()
+            assert reloaded_config is not None, "Config reload failed"
             
             duration = time.time() - start_time
             self.report.add_test(test_name, True, duration, {
                 "validation_errors": len(errors),
-                "supported_formats": len(config.document_processing.supported_formats)
+                "config_sections": len([attr for attr in dir(config) if not attr.startswith('_')]),
+                "security_enabled": config.security.enable_file_validation
             })
             
         except Exception as e:

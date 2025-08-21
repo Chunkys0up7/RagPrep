@@ -377,13 +377,19 @@ class LLMMetadataExtractor(MetadataExtractor):
     """LLM-powered metadata extractor using OpenAI API."""
     
     def __init__(self, config: Config):
-        """Initialize LLM extractor."""
+        """Initialize the LLM metadata extractor."""
         super().__init__(config)
         self.extractor_name = "LLMMetadataExtractor"
         self.openai_api_key = config.openai_api_key
+        self.llm_model = config.metadata.llm_model
+        self.llm_temperature = config.metadata.llm_temperature
         
         if not self.openai_api_key:
-            logger.warning("OpenAI API key not provided, LLM extraction will be limited")
+            raise ValueError("OpenAI API key is required for LLM metadata extraction")
+        
+        # Initialize OpenAI client
+        import openai
+        openai.api_key = self.openai_api_key
     
     def extract_metadata(self, content: Union[str, ParsedContent, DocumentChunk]) -> ExtractionResult:
         """Extract metadata using LLM."""
@@ -492,13 +498,13 @@ class LLMMetadataExtractor(MetadataExtractor):
             
             # Call OpenAI API
             response = openai.ChatCompletion.create(
-                model="gpt-3.5-turbo",
+                model=self.llm_model,
                 messages=[
                     {"role": "system", "content": "You are a precise entity extraction assistant. Return only valid JSON."},
                     {"role": "user", "content": prompt}
                 ],
                 max_tokens=1000,
-                temperature=0.1
+                temperature=self.llm_temperature
             )
             
             # Parse response
@@ -560,13 +566,13 @@ class LLMMetadataExtractor(MetadataExtractor):
             
             # Call OpenAI API
             response = openai.ChatCompletion.create(
-                model="gpt-3.5-turbo",
+                model=self.llm_model,
                 messages=[
                     {"role": "system", "content": "You are a precise topic extraction assistant. Return only valid JSON."},
                     {"role": "user", "content": prompt}
                 ],
                 max_tokens=1000,
-                temperature=0.1
+                temperature=self.llm_temperature
             )
             
             # Parse response
@@ -631,13 +637,13 @@ class LLMMetadataExtractor(MetadataExtractor):
             
             # Call OpenAI API
             response = openai.ChatCompletion.create(
-                model="gpt-3.5-turbo",
+                model=self.llm_model,
                 messages=[
                     {"role": "system", "content": "You are a precise relationship extraction assistant. Return only valid JSON."},
                     {"role": "user", "content": prompt}
                 ],
                 max_tokens=1000,
-                temperature=0.1
+                temperature=self.llm_temperature
             )
             
             # Parse response
@@ -695,13 +701,13 @@ class LLMMetadataExtractor(MetadataExtractor):
             
             # Call OpenAI API
             response = openai.ChatCompletion.create(
-                model="gpt-3.5-turbo",
+                model=self.llm_model,
                 messages=[
                     {"role": "system", "content": "You are a precise summarization assistant. Return only valid JSON."},
                     {"role": "user", "content": prompt}
                 ],
                 max_tokens=500,
-                temperature=0.1
+                temperature=self.llm_temperature
             )
             
             # Parse response

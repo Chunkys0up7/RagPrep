@@ -47,9 +47,10 @@ chunking:
 metadata:
   enable_llm_extraction: true
   enable_basic_extraction: true
+  extraction_level: "enhanced"
+  llm_provider: "openai"
   llm_model: "gpt-3.5-turbo"
-  max_tokens: 1000
-  temperature: 0.1
+  llm_temperature: 0.1
   enable_entity_extraction: true
   enable_topic_extraction: true
   enable_relationship_extraction: true
@@ -89,6 +90,7 @@ output:
   chunks_directory: "output/chunks"
   metadata_directory: "output/metadata"
   embeddings_directory: "output/embeddings"
+  vector_store_path: "vector_db"
   enable_compression: true
   compression_format: "gzip"
   enable_backup: true
