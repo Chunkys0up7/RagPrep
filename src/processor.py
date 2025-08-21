@@ -12,12 +12,12 @@ import logging
 import time
 from pathlib import Path
 
-from chunkers import DocumentChunk, get_document_chunker
-from config import Config
-from metadata_extractors import get_metadata_extractor
-from parsers import ParsedContent, get_document_parser
-from quality_assessment import get_quality_assessment_system
-from security import SecurityManager
+from .chunkers import DocumentChunk, get_document_chunker
+from .config import Config
+from .metadata_extractors import get_metadata_extractor
+from .parsers import ParsedContent, get_document_parser
+from .quality_assessment import get_quality_assessment_system
+from .security import SecurityManager
 
 
 @dataclass
@@ -49,14 +49,14 @@ class DocumentProcessor:
 
         # Initialize components using factory functions
         self.parser = get_document_parser(self.config)
-        self.chunker = get_document_chunker(self.config)
-        self.metadata_extractor = get_metadata_extractor(self.config)
+        self.chunker = get_document_chunker("hybrid", self.config)
+        self.metadata_extractor = get_metadata_extractor("enhanced", self.config)
         self.quality_system = get_quality_assessment_system(self.config)
         self.security_manager = SecurityManager(self.config)
 
         # Initialize vector store
         try:
-            from vector_store import get_vector_store
+            from .vector_store import get_vector_store
 
             self.vector_store = get_vector_store("file", self.config)
             self.logger.info("Vector store initialized successfully")

@@ -1,31 +1,27 @@
-import json
-import os
+"""
+Tests for quality assessment system
+"""
+
 import pytest
-import sys
-import tempfile
-import time
+from unittest.mock import Mock, patch, MagicMock
 from datetime import datetime
-from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
 
-sys.path.append(str(Path(__file__).parent.parent / "src"))
-
-from chunkers import ChunkingResult, DocumentChunk
-from config import Config
-from metadata_extractors import Entity, ExtractionResult, Relationship, Summary, Topic
-from parsers import ParsedContent, ParserResult
-from quality_assessment import (
-    ContentCompletenessAssessor,
-    MetadataAccuracyAssessor,
-    PerformanceMetrics,
-    PerformanceMonitor,
-    QualityAssessmentSystem,
-    QualityAssessor,
+from src.quality_assessment import (
     QualityMetric,
     QualityReport,
+    PerformanceMetrics,
+    QualityAssessor,
+    ContentCompletenessAssessor,
     StructureIntegrityAssessor,
+    MetadataAccuracyAssessor,
+    PerformanceMonitor,
+    QualityAssessmentSystem,
     get_quality_assessment_system,
 )
+from src.config import Config
+from src.parsers import ParsedContent, ParserResult
+from src.chunkers import ChunkingResult, DocumentChunk
+from src.metadata_extractors import ExtractionResult
 
 
 class TestQualityMetric:

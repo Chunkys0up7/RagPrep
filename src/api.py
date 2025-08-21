@@ -17,10 +17,10 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from config import Config
-from processor import DocumentProcessor
-from multimodal import get_multimodal_processor
-from metadata_enhancement import get_metadata_enhancer
+from .config import Config
+from .processor import DocumentProcessor
+from .multimodal import get_multimodal_processor
+from .metadata_enhancement import get_metadata_enhancer
 
 logger = logging.getLogger(__name__)
 

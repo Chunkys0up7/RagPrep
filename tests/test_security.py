@@ -1,28 +1,21 @@
 """
-Unit tests for the security module.
-
-Tests file validation, sanitization, content analysis, and security management.
+Tests for security module
 """
 
-import os
 import pytest
-import sys
 import tempfile
+import os
 from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch, MagicMock
 
-# Add src to path for imports
-sys.path.append(str(Path(__file__).parent.parent / "src"))
-
-from config import Config
-from security import (
-    ContentAnalyzer,
-    FileSanitizer,
-    FileSecurityProfile,
+from src.security import (
     FileValidator,
-    SecurityCheck,
+    FileSanitizer,
+    ContentAnalyzer,
     SecurityManager,
+    get_security_manager,
 )
+from src.config import Config
 
 
 class TestSecurityCheck:

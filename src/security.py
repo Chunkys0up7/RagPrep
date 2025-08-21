@@ -408,3 +408,11 @@ class SecurityManager:
     def sanitize_file_path(self, file_path: Path) -> Path:
         """Sanitize file path for safe processing."""
         return self.sanitizer.sanitize_path(file_path)
+
+
+def get_security_manager(config: Optional[Config] = None) -> SecurityManager:
+    """Factory function to create a SecurityManager instance."""
+    if config is None:
+        from .config import Config
+        config = Config()
+    return SecurityManager(config)

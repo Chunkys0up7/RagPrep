@@ -4,16 +4,11 @@ Tests for configuration management
 
 import os
 import pytest
-
-# Add src to path for imports
-import sys
 import tempfile
 import yaml
 from pathlib import Path
 
-sys.path.append(str(Path(__file__).parent.parent / "src"))
-
-from config import (
+from src.config import (
     ChunkingConfig,
     Config,
     LoggingConfig,
@@ -324,7 +319,7 @@ document_processing:
 
     def test_global_config_functions(self):
         """Test global configuration functions."""
-        from config import get_config, reload_config
+        from src.config import get_config, reload_config
 
         # Test get_config
         config1 = get_config()

@@ -3,14 +3,9 @@ Tests for document chunkers
 """
 
 import pytest
-import sys
-from pathlib import Path
 from unittest.mock import Mock, patch
 
-# Add src to path for imports
-sys.path.append(str(Path(__file__).parent.parent / "src"))
-
-from chunkers import (
+from src.chunkers import (
     ChunkingResult,
     DocumentChunk,
     DocumentChunker,
@@ -21,8 +16,8 @@ from chunkers import (
     StructuralChunker,
     get_document_chunker,
 )
-from config import Config
-from parsers import ParsedContent
+from src.config import Config
+from src.parsers import ParsedContent
 
 
 class TestDocumentChunk:

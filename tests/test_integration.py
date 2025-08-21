@@ -1,24 +1,20 @@
 """
-Integration tests for the RAG Document Processing Utility.
-
-This module contains end-to-end integration tests that validate
-the complete document processing pipeline.
+Integration tests for the complete document processing pipeline
 """
 
-import os
 import pytest
-import sys
 import tempfile
+import os
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, patch, MagicMock
 
-sys.path.append(str(Path(__file__).parent.parent / "src"))
-
-from chunkers import DocumentChunk, HybridChunker
-from config import Config
-from metadata_extractors import BasicMetadataExtractor, ExtractionResult
-from parsers import CascadingDocumentParser, ParsedContent
-from quality_assessment import QualityAssessmentSystem
+from src.processor import DocumentProcessor, ProcessingResult
+from src.config import Config
+from src.parsers import ParsedContent, ParserResult
+from src.chunkers import DocumentChunk, ChunkingResult
+from src.metadata_extractors import ExtractionResult
+from src.quality_assessment import QualityReport
+from src.vector_store import VectorStore
 
 
 class TestDocumentProcessingPipeline:
