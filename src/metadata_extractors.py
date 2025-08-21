@@ -871,8 +871,9 @@ class MetadataExtractorFactory:
 
 # Convenience function to get extractor instance
 def get_metadata_extractor(
-    extraction_level: str = "enhanced", config_path: Optional[str] = None
+    extraction_level: str = "enhanced", config: Optional[Config] = None
 ) -> MetadataExtractor:
     """Get a configured metadata extractor instance."""
-    config = get_config(config_path)
+    if config is None:
+        config = get_config()
     return MetadataExtractorFactory.create_extractor(extraction_level, config)

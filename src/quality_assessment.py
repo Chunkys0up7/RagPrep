@@ -1253,8 +1253,9 @@ class QualityAssessmentSystem:
 
 
 def get_quality_assessment_system(
-    config_path: Optional[str] = None,
+    config: Optional[Config] = None,
 ) -> QualityAssessmentSystem:
     """Convenience function to get a quality assessment system instance."""
-    config = get_config(config_path)
+    if config is None:
+        config = get_config()
     return QualityAssessmentSystem(config)

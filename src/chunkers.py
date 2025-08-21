@@ -833,8 +833,9 @@ class DocumentChunkerFactory:
 
 # Convenience function to get chunker instance
 def get_document_chunker(
-    strategy: str = "hybrid", config_path: Optional[str] = None
+    strategy: str = "hybrid", config: Optional[Config] = None
 ) -> DocumentChunker:
     """Get a configured document chunker instance."""
-    config = get_config(config_path)
+    if config is None:
+        config = get_config()
     return DocumentChunkerFactory.create_chunker(strategy, config)

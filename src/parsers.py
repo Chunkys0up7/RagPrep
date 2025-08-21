@@ -805,7 +805,8 @@ class CascadingDocumentParser:
 
 
 # Convenience function to get parser instance
-def get_document_parser(config_path: Optional[str] = None) -> CascadingDocumentParser:
+def get_document_parser(config: Optional[Config] = None) -> CascadingDocumentParser:
     """Get a configured document parser instance."""
-    config = get_config(config_path)
+    if config is None:
+        config = get_config()
     return CascadingDocumentParser(config)
