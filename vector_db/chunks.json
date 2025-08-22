@@ -169,7 +169,7 @@
   },
   "chunk_0000_d48fe046": {
     "chunk_id": "chunk_0000_d48fe046",
-    "document_id": "e5fd45745b4d1c5e",
+    "document_id": "85647c36f56e15f3",
     "content": "Test document content",
     "chunk_type": "fixed_size",
     "quality_score": 0.416,
@@ -181,16 +181,16 @@
       "sentence_count": 1,
       "paragraph_count": 1,
       "chunker": "FixedSizeChunker",
-      "timestamp": 1755872064.4541788,
+      "timestamp": 1755873402.4353902,
       "start_position": 0,
       "end_position": 2000,
       "overlap_size": 200
     },
-    "created_at": "1755872064.4541788"
+    "created_at": "1755873402.4353902"
   },
   "chunk_0000_2fa01d25": {
     "chunk_id": "chunk_0000_2fa01d25",
-    "document_id": "608662b5f2cab596",
+    "document_id": "87305d1dd4e0c4f4",
     "content": "Test document 0 content",
     "chunk_type": "fixed_size",
     "quality_score": 0.421,
@@ -202,16 +202,16 @@
       "sentence_count": 1,
       "paragraph_count": 1,
       "chunker": "FixedSizeChunker",
-      "timestamp": 1755872064.131906,
+      "timestamp": 1755873402.319182,
       "start_position": 0,
       "end_position": 2000,
       "overlap_size": 200
     },
-    "created_at": "1755872064.131906"
+    "created_at": "1755873402.319182"
   },
   "chunk_0000_8eeb02f7": {
     "chunk_id": "chunk_0000_8eeb02f7",
-    "document_id": "412d8e5fc8d9aa9b",
+    "document_id": "ba5ac861962cdc53",
     "content": "Test document 1 content",
     "chunk_type": "fixed_size",
     "quality_score": 0.421,
@@ -223,12 +223,12 @@
       "sentence_count": 1,
       "paragraph_count": 1,
       "chunker": "FixedSizeChunker",
-      "timestamp": 1755872064.1939068,
+      "timestamp": 1755873402.3685586,
       "start_position": 0,
       "end_position": 2000,
       "overlap_size": 200
     },
-    "created_at": "1755872064.1939068"
+    "created_at": "1755873402.3685586"
   },
   "chunk_0000_1c0efd1f": {
     "chunk_id": "chunk_0000_1c0efd1f",

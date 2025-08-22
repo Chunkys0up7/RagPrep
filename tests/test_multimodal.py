@@ -11,6 +11,7 @@ from unittest.mock import Mock, patch, MagicMock
 from src.multimodal import (
     MultimodalProcessor,
     ImageProcessor,
+    OCRProcessor,
     TableProcessor,
     ChartDetector,
     MathProcessor,
@@ -22,19 +23,20 @@ from src.config import Config
 class TestImageProcessor:
     """Test image processing functionality."""
 
-    def setup_method(self):
+    @pytest.fixture(autouse=True)
+    def setup(self, mock_config):
         """Set up test fixtures."""
-        self.mock_config = Mock(spec=Config)
+        self.mock_config = mock_config
         self.mock_config.multimodal.image_processing = True
         self.mock_config.multimodal.ocr_engine = "tesseract"
-        self.processor = ImageProcessor(self.mock_config)
+        self.processor = OCRProcessor()
 
-    @patch('src.multimodal.cv2.imread')
-    @patch('src.multimodal.pytesseract.image_to_string')
-    def test_extract_text_from_image(self, mock_tesseract, mock_cv2):
+    @patch('PIL.Image.open')
+    @patch('pytesseract.image_to_string')
+    def test_extract_text_from_image(self, mock_tesseract, mock_image_open):
         """Test OCR text extraction from images."""
-        # Mock OpenCV
-        mock_cv2.return_value = Mock()
+        # Mock PIL Image open
+        mock_image_open.return_value = Mock()
         
         # Mock Tesseract
         mock_tesseract.return_value = "Extracted text from image"
@@ -66,12 +68,13 @@ class TestImageProcessor:
 class TestTableProcessor:
     """Test table processing functionality."""
 
-    def setup_method(self):
+    @pytest.fixture(autouse=True)
+    def setup(self, mock_config):
         """Set up test fixtures."""
-        self.mock_config = Mock(spec=Config)
+        self.mock_config = mock_config
         self.mock_config.multimodal.table_extraction = True
         self.mock_config.multimodal.table_parser = "camelot"
-        self.processor = TableProcessor(self.mock_config)
+        self.processor = TableProcessor()
 
     @patch('src.multimodal.camelot.read_pdf')
     def test_extract_tables_from_pdf(self, mock_camelot):
@@ -100,11 +103,12 @@ class TestTableProcessor:
 class TestChartDetector:
     """Test chart detection functionality."""
 
-    def setup_method(self):
+    @pytest.fixture(autouse=True)
+    def setup(self, mock_config):
         """Set up test fixtures."""
-        self.mock_config = Mock(spec=Config)
+        self.mock_config = mock_config
         self.mock_config.multimodal.chart_detection = True
-        self.detector = ChartDetector(self.mock_config)
+        self.detector = ChartDetector()
 
     @patch('src.multimodal.cv2.imread')
     def test_detect_charts_in_image(self, mock_cv2):
@@ -131,11 +135,12 @@ class TestChartDetector:
 class TestMathProcessor:
     """Test mathematical content processing."""
 
-    def setup_method(self):
+    @pytest.fixture(autouse=True)
+    def setup(self, mock_config):
         """Set up test fixtures."""
-        self.mock_config = Mock(spec=Config)
+        self.mock_config = mock_config
         self.mock_config.multimodal.math_processing = True
-        self.processor = MathProcessor(self.mock_config)
+        self.processor = MathProcessor()
 
     def test_extract_math_content(self):
         """Test mathematical content extraction."""
@@ -160,9 +165,10 @@ class TestMathProcessor:
 class TestMultimodalProcessor:
     """Test the main multimodal processor."""
 
-    def setup_method(self):
+    @pytest.fixture(autouse=True)
+    def setup(self, mock_config):
         """Set up test fixtures."""
-        self.mock_config = Mock(spec=Config)
+        self.mock_config = mock_config
         self.mock_config.multimodal.image_processing = True
         self.mock_config.multimodal.table_extraction = True
         self.mock_config.multimodal.chart_detection = True
@@ -171,10 +177,10 @@ class TestMultimodalProcessor:
 
     def test_processor_initialization(self):
         """Test multimodal processor initialization."""
-        assert hasattr(self.processor, "image_processor")
-        assert hasattr(self.processor, "table_extractor")
-        assert hasattr(self.processor, "chart_detector")
+        assert hasattr(self.processor, "image_processors")
+        assert hasattr(self.processor, "table_processor")
         assert hasattr(self.processor, "math_processor")
+        assert isinstance(self.processor.image_processors, list)
 
     def test_process_multimodal_content(self):
         """Test processing of multimodal content."""
@@ -185,7 +191,7 @@ class TestMultimodalProcessor:
             "charts": []
         }
         
-        result = self.processor.process_content(content)
+        result = self.processor.process_content("/fake/path", "document", content)
         
         assert result["success"] is True
         assert "processed_content" in result

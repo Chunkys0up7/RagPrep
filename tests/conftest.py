@@ -98,21 +98,78 @@ def mock_config():
     config.vector_store.host = "localhost"
     config.vector_store.port = 8000
     
-    # Add missing monitoring section
-    config.monitoring = Mock()
+    # Add missing attributes that tests are expecting
+    config.vector_store.type = "chromadb"
+    config.vector_store.database_name = "test_db"
+    config.vector_store.collection_name = "test_collection"
+    
+    # Add missing metadata enhancement attributes
+    config.metadata.enhancement.cross_document_analysis = True
+    config.metadata.enhancement.semantic_clustering = True
+    config.metadata.enhancement.knowledge_graph = True
+    
+    # Add missing multimodal attributes
+    config.multimodal.enable_image_processing = True
+    config.multimodal.enable_table_extraction = True
+    config.multimodal.enable_math_extraction = True
+    config.multimodal.enable_chart_detection = True
+    config.multimodal.image_quality_threshold = 0.7
+    
+    # Add missing monitoring attributes
     config.monitoring.performance_optimization = True
-    config.monitoring.metrics_collection = True
+    config.monitoring.enable_metrics_collection = True
+    config.monitoring.metrics_retention_days = 30
     
-    # Add missing vector_store section
-    config.vector_store = Mock()
-    config.vector_store.host = "localhost"
-    config.vector_store.port = 8000
-    config.vector_store.database = "test_db"
+    # Add missing output attributes
+    config.output.output_directory = "./output"
+    config.output.vector_store_path = "./vector_db"
+    config.output.enable_compression = False
+    config.output.output_format = "json"
     
-    # Add missing perplexity_api_key
+    # Add missing security attributes
+    config.security.enable_file_validation = True
+    config.security.enable_content_analysis = True
+    config.security.max_file_size_mb = 100
+    config.security.allowed_file_extensions = {".pdf", ".docx", ".txt", ".html"}
+    
+    # Add missing logging attributes
+    config.logging.log_level = "INFO"
+    config.logging.enable_console_logging = True
+    
+    # Add missing performance attributes
+    config.performance.max_concurrent_processes = 4
+    config.performance.memory_limit_gb = 8
+    config.performance.enable_caching = True
+    
+    # Add missing quality attributes
+    config.quality.enable_quality_assessment = True
+    config.quality.quality_threshold = 0.7
+    config.quality.enable_performance_monitoring = True
+    
+    # Add missing parser attributes
+    config.parser.supported_formats = [".pdf", ".docx", ".txt", ".html"]
+    config.parser.max_file_size_mb = 100
+    config.parser.enable_fallback = True
+    
+    # Add missing chunking attributes
+    config.chunking.strategy = "hybrid"
+    config.chunking.chunk_size = 1000
+    config.chunking.overlap_size = 200
+    config.chunking.min_chunk_size = 100
+    config.chunking.max_chunk_size = 2000
+    
+    # Add missing metadata attributes
+    config.metadata.extraction_level = "advanced"
+    config.metadata.enable_llm = True
+    config.metadata.llm_model = "gpt-3.5-turbo"
+    config.metadata.llm_temperature = 0.1
+    config.metadata.max_entities = 50
+    config.metadata.max_topics = 20
+    
+    # Add missing perplexity API key
     config.perplexity_api_key = "test-api-key-12345"
     
-    # Mock method calls
+    # Mock the get methods (only those that actually exist in Config class)
     config.get_parser_config.return_value = config.parser
     config.get_chunking_config.return_value = config.chunking
     config.get_metadata_config.return_value = config.metadata
