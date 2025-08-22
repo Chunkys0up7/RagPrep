@@ -227,6 +227,14 @@ async def process_batch(request: BatchProcessingRequest, background_tasks: Backg
         # Generate batch ID
         batch_id = f"batch_{int(time.time())}"
         
+        # Store initial status
+        processing_status[batch_id] = {
+            "status": "pending",
+            "progress": 0.0,
+            "message": "Batch processing queued",
+            "result": None
+        }
+        
         # Start background batch processing
         background_tasks.add_task(
             process_batch_background,

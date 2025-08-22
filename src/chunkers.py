@@ -592,7 +592,6 @@ class SemanticChunker(DocumentChunker):
                 total_chunks=len(chunks),
                 processing_time=time.time() - start_time,
                 metadata={
-                    "semantic_threshold": self.chunking_config.semantic_threshold,
                     "total_content_length": len(text_content),
                 },
                 errors=errors,

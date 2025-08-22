@@ -11,9 +11,9 @@ from unittest.mock import Mock, patch, MagicMock
 from src.processor import DocumentProcessor, ProcessingResult
 from src.config import Config
 from src.parsers import ParsedContent, ParserResult, CascadingDocumentParser
-from src.chunkers import DocumentChunk, ChunkingResult
-from src.metadata_extractors import ExtractionResult
-from src.quality_assessment import QualityReport
+from src.chunkers import DocumentChunk, ChunkingResult, HybridChunker
+from src.metadata_extractors import ExtractionResult, BasicMetadataExtractor
+from src.quality_assessment import QualityReport, QualityAssessmentSystem
 from src.vector_store import VectorStore
 
 
@@ -232,9 +232,9 @@ class TestConfigurationValidation:
         assert config.metadata is not None
 
         # Test configuration validation
-        errors = config.validate_config()
-        # Some errors are expected due to missing API keys
-        print(f"📋 Configuration validation completed with {len(errors)} warnings")
+        validated_config = config.validate_config()
+        assert validated_config is config
+        print(f"📋 Configuration validation completed successfully")
 
     def test_configuration_components_integration(self):
         """Test that configuration components work together."""

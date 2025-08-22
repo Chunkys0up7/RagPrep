@@ -6,6 +6,7 @@ import pytest
 import time
 import tempfile
 import os
+import json
 from unittest.mock import Mock, patch, MagicMock
 from datetime import datetime
 
@@ -461,7 +462,7 @@ class TestPerformanceMonitor:
         assert metric.operation == "test_op"
         assert metric.input_size == 1000
         assert metric.start_time > 0
-        assert not hasattr(metric, "end_time")
+        assert metric.end_time is None
 
     def test_end_operation(self):
         """Test ending an operation."""
@@ -471,9 +472,11 @@ class TestPerformanceMonitor:
         self.monitor.end_operation(operation_id, success=True, output_size=500)
 
         metric = self.monitor.metrics[0]
-        assert hasattr(metric, "end_time")
+        assert metric.end_time is not None
         assert metric.success is True
         assert metric.output_size == 500
+        # Duration should be calculated automatically in __post_init__
+        assert metric.duration is not None
         assert metric.duration > 0
 
     def test_get_performance_summary(self):

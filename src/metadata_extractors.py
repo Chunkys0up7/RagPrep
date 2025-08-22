@@ -410,7 +410,7 @@ class BasicMetadataExtractor(MetadataExtractor):
         relationships = []
 
         # Simple co-occurrence relationships
-        entity_texts = [e.text for e in entities if e.entity_type in ["email", "url"]]
+        entity_texts = [e.text for e in entities if e.entity_type in ["person", "organization", "location", "email", "url"]]
 
         for i, entity1 in enumerate(entity_texts):
             for entity2 in entity_texts[i + 1 :]:

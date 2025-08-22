@@ -86,6 +86,18 @@ class PerformanceMetrics:
     def __post_init__(self):
         if self.end_time is not None and self.duration is None:
             self.duration = self.end_time - self.start_time
+    
+    @property
+    def duration(self) -> Optional[float]:
+        """Calculate duration dynamically."""
+        if self.end_time is not None:
+            return self.end_time - self.start_time
+        return None
+    
+    @duration.setter
+    def duration(self, value: Optional[float]):
+        """Set duration value."""
+        self._duration = value
 
 
 class QualityAssessor(ABC):
@@ -1043,7 +1055,7 @@ class PerformanceMonitor:
         """End monitoring an operation."""
         found_metric = False
         for metric in reversed(self.metrics):
-            if metric.operation in operation_id and not hasattr(metric, "end_time"):
+            if metric.operation in operation_id and metric.end_time is None:
                 metric.end_time = time.time()
                 metric.success = success
                 metric.error_message = error_message
