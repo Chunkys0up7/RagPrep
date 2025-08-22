@@ -250,6 +250,11 @@ class ContentAnalyzer:
                 rb"<script",  # HTML script tags
                 rb"javascript:",  # JavaScript protocol
                 rb"vbscript:",  # VBScript protocol
+                rb"<?php",  # PHP opening tag
+                rb"<?=",  # PHP short echo tag
+                rb"<?",  # PHP short tag
+                rb"<%",  # ASP tags
+                rb"<%=",  # ASP echo tags
             ],
             "macro": [
                 rb"VBA",  # VBA macros

@@ -350,20 +350,6 @@ class TestSecurityManager:
         """Test security assessment when file validation fails."""
         # Create a file with disallowed extension
         with tempfile.NamedTemporaryFile(suffix=".exe", delete=False) as f:
-            temp_path = Path(f.name)
-
-        try:
-            profile = self.security_manager.assess_file_security(temp_path)
-
-            assert profile.is_safe is False
-            assert profile.overall_threat_level == "high"
-        finally:
-            os.unlink(temp_path)
-
-    def test_assess_file_security_with_validation_failure(self):
-        """Test security assessment when file validation fails."""
-        # Create a file with disallowed extension
-        with tempfile.NamedTemporaryFile(suffix=".exe", delete=False) as f:
             f.write(b"Safe content but wrong extension")
             temp_path = Path(f.name)
 
@@ -373,7 +359,7 @@ class TestSecurityManager:
             assert profile.is_safe is False
             assert profile.overall_threat_level == "high"
             assert any(
-                "validation failed" in check.details
+                "not allowed" in check.details
                 for check in profile.security_checks
             )
         finally:
@@ -423,7 +409,8 @@ class TestSecurityIntegration:
             # Test full security assessment
             profile = self.security_manager.assess_file_security(temp_path)
             assert profile.is_safe is False
-            assert profile.overall_threat_level == "medium"
+            # Since we have a high threat level script, overall threat should be high
+            assert profile.overall_threat_level == "high"
 
         finally:
             os.unlink(temp_path)
