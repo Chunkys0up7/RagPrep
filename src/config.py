@@ -167,6 +167,7 @@ class Config(BaseModel):
     version: str = Field(default="0.1.0", description="Application version")
     debug: bool = Field(default=False, description="Enable debug mode")
     config_path: Optional[str] = Field(default=None, exclude=True)
+    perplexity_api_key: Optional[str] = Field(default=None, description="Perplexity API key")
 
     # Configuration sections
     parser: ParserConfig = Field(
@@ -205,6 +206,33 @@ class Config(BaseModel):
         default_factory=SecurityConfig,
         description="Security configuration",
     )
+
+    def __init__(self, **data):
+        """Initialize configuration, optionally loading from file."""
+        # Load environment variables first
+        env_data = {}
+        if "PERPLEXITY_API_KEY" in os.environ:
+            env_data["perplexity_api_key"] = os.environ["PERPLEXITY_API_KEY"]
+        
+        config_path = data.get("config_path")
+        if config_path and os.path.exists(config_path):
+            # Load from file and merge with provided data
+            try:
+                with open(config_path, "r") as f:
+                    file_data = yaml.safe_load(f)
+                # Merge file data with env data, then with provided data (provided data takes precedence)
+                merged_data = {**file_data, **env_data, **data}
+                super().__init__(**merged_data)
+            except Exception as e:
+                logger.error(f"Error loading config from {config_path}: {e}")
+                logger.info("Using default configuration")
+                # Merge env data with provided data
+                merged_data = {**env_data, **data}
+                super().__init__(**merged_data)
+        else:
+            # Merge env data with provided data
+            merged_data = {**env_data, **data}
+            super().__init__(**merged_data)
 
     @field_validator("config_path", mode="before")
     @classmethod

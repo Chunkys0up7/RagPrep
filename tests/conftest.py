@@ -33,18 +33,35 @@ def mock_config():
     config.metadata.llm_temperature = 0.1
     config.metadata.max_entities = 50
     config.metadata.max_topics = 20
+    config.metadata.enhancement = Mock()
+    config.metadata.enhancement.cross_document_analysis = True
+    config.metadata.enhancement.semantic_clustering = True
+    config.metadata.enhancement.knowledge_graph = True
+    config.metadata.enhancement.cross_document_analysis = True
+    config.metadata.enhancement.semantic_clustering = True
+    config.metadata.enhancement.knowledge_graph = True
     
     config.multimodal = Mock()
     config.multimodal.enable_image_processing = True
     config.multimodal.enable_table_extraction = True
     config.multimodal.enable_math_extraction = True
     config.multimodal.image_quality_threshold = 0.7
+    config.multimodal.image_processing = True
+    config.multimodal.table_extraction = True
+    config.multimodal.chart_detection = True
+    config.multimodal.math_processing = True
+    config.multimodal.table_extraction = True
+    config.multimodal.chart_detection = True
+    config.multimodal.math_processing = True
     
     config.quality = Mock()
     config.quality.enable_quality_assessment = True
     config.quality.quality_threshold = 0.7
     config.quality.enable_performance_monitoring = True
     config.quality.metrics_retention_days = 30
+    
+    config.monitoring = Mock()
+    config.monitoring.performance_optimization = True
     
     config.performance = Mock()
     config.performance.max_concurrent_processes = 4
@@ -77,6 +94,24 @@ def mock_config():
     config.security.max_filename_length = 255
     config.security.enable_content_analysis = True
     
+    config.vector_store = Mock()
+    config.vector_store.host = "localhost"
+    config.vector_store.port = 8000
+    
+    # Add missing monitoring section
+    config.monitoring = Mock()
+    config.monitoring.performance_optimization = True
+    config.monitoring.metrics_collection = True
+    
+    # Add missing vector_store section
+    config.vector_store = Mock()
+    config.vector_store.host = "localhost"
+    config.vector_store.port = 8000
+    config.vector_store.database = "test_db"
+    
+    # Add missing perplexity_api_key
+    config.perplexity_api_key = "test-api-key-12345"
+    
     # Mock method calls
     config.get_parser_config.return_value = config.parser
     config.get_chunking_config.return_value = config.chunking
@@ -96,12 +131,18 @@ def mock_parsed_content():
     """Create a mock ParsedContent object."""
     content = Mock()
     content.text_content = "This is sample text content for testing."
+    content.structured_content = [
+        {"type": "heading", "text": "Test Heading", "level": 1},
+        {"type": "paragraph", "text": "This is a test paragraph."},
+    ]
     content.structure = [
         {"type": "heading", "text": "Test Heading", "level": 1},
         {"type": "paragraph", "text": "This is a test paragraph."},
     ]
     content.metadata = {"source": "test.txt", "format": "text"}
     content.raw_content = "This is sample text content for testing."
+    content.parsing_errors = []
+    content.parser_used = "test_parser"
     return content
 
 

@@ -458,23 +458,18 @@ class BasicMetadataExtractor(MetadataExtractor):
 
 
 class LLMMetadataExtractor(MetadataExtractor):
-    """LLM-powered metadata extractor using OpenAI API."""
+    """LLM-powered metadata extractor using Perplexity API."""
 
     def __init__(self, config: Config):
         """Initialize the LLM metadata extractor."""
         super().__init__(config)
         self.extractor_name = "LLMMetadataExtractor"
-        self.openai_api_key = config.openai_api_key
+        self.perplexity_api_key = config.perplexity_api_key
         self.llm_model = config.metadata.llm_model
         self.llm_temperature = config.metadata.llm_temperature
 
-        if not self.openai_api_key:
-            raise ValueError("OpenAI API key is required for LLM metadata extraction")
-
-        # Initialize OpenAI client
-        import openai
-
-        openai.api_key = self.openai_api_key
+        if not self.perplexity_api_key:
+            raise ValueError("Perplexity API key is required for LLM metadata extraction")
 
     def extract_metadata(
         self, content: Union[str, ParsedContent, DocumentChunk]
@@ -562,12 +557,9 @@ class LLMMetadataExtractor(MetadataExtractor):
             )
 
     def _extract_entities_with_llm(self, text: str) -> List[Entity]:
-        """Extract entities using OpenAI API."""
+        """Extract entities using Perplexity API."""
         try:
-            import openai
-
-            # Set API key
-            openai.api_key = self.openai_api_key
+            import requests
 
             # Prepare prompt for entity extraction
             prompt = f"""
@@ -587,22 +579,29 @@ class LLMMetadataExtractor(MetadataExtractor):
             Focus on the most important and relevant entities. Only return valid JSON.
             """
 
-            # Call OpenAI API
-            response = openai.ChatCompletion.create(
-                model=self.llm_model,
-                messages=[
+            # Call Perplexity API
+            url = "https://api.perplexity.ai/chat/completions"
+            headers = {
+                "Authorization": f"Bearer {self.perplexity_api_key}",
+                "Content-Type": "application/json"
+            }
+
+            payload = {
+                "model": "sonar-pro",
+                "messages": [
                     {
                         "role": "system",
                         "content": "You are a precise entity extraction assistant. Return only valid JSON.",
                     },
                     {"role": "user", "content": prompt},
-                ],
-                max_tokens=1000,
-                temperature=self.llm_temperature,
-            )
+                ]
+            }
 
-            # Parse response
-            response_text = response.choices[0].message.content.strip()
+            response = requests.post(url, headers=headers, json=payload)
+            response.raise_for_status()
+            
+            response_data = response.json()
+            response_text = response_data["choices"][0]["message"]["content"].strip()
 
             try:
                 entities_data = json.loads(response_text)
@@ -633,12 +632,9 @@ class LLMMetadataExtractor(MetadataExtractor):
             return []
 
     def _extract_topics_with_llm(self, text: str) -> List[Topic]:
-        """Extract topics using OpenAI API."""
+        """Extract topics using Perplexity API."""
         try:
-            import openai
-
-            # Set API key
-            openai.api_key = self.openai_api_key
+            import requests
 
             # Prepare prompt for topic extraction
             prompt = f"""
@@ -658,22 +654,29 @@ class LLMMetadataExtractor(MetadataExtractor):
             Identify 3-5 main topics. Only return valid JSON.
             """
 
-            # Call OpenAI API
-            response = openai.ChatCompletion.create(
-                model=self.llm_model,
-                messages=[
+            # Call Perplexity API
+            url = "https://api.perplexity.ai/chat/completions"
+            headers = {
+                "Authorization": f"Bearer {self.perplexity_api_key}",
+                "Content-Type": "application/json"
+            }
+
+            payload = {
+                "model": "sonar-pro",
+                "messages": [
                     {
                         "role": "system",
                         "content": "You are a precise topic extraction assistant. Return only valid JSON.",
                     },
                     {"role": "user", "content": prompt},
-                ],
-                max_tokens=1000,
-                temperature=self.llm_temperature,
-            )
+                ]
+            }
 
-            # Parse response
-            response_text = response.choices[0].message.content.strip()
+            response = requests.post(url, headers=headers, json=payload)
+            response.raise_for_status()
+            
+            response_data = response.json()
+            response_text = response_data["choices"][0]["message"]["content"].strip()
 
             try:
                 topics_data = json.loads(response_text)
@@ -697,21 +700,18 @@ class LLMMetadataExtractor(MetadataExtractor):
                 return []
 
         except ImportError:
-            logger.warning("OpenAI library not available")
+            logger.warning("Requests library not available")
             return []
         except Exception as e:
-            logger.error(f"Error calling OpenAI API: {e}")
+            logger.error(f"Error calling Perplexity API: {e}")
             return []
 
     def _extract_relationships_with_llm(
         self, text: str, entities: List[Entity]
     ) -> List[Relationship]:
-        """Extract relationships using OpenAI API."""
+        """Extract relationships using Perplexity API."""
         try:
-            import openai
-
-            # Set API key
-            openai.api_key = self.openai_api_key
+            import requests
 
             # Prepare entity list for relationship extraction
             entity_list = [
@@ -736,22 +736,29 @@ class LLMMetadataExtractor(MetadataExtractor):
             Focus on meaningful relationships. Only return valid JSON.
             """
 
-            # Call OpenAI API
-            response = openai.ChatCompletion.create(
-                model=self.llm_model,
-                messages=[
+            # Call Perplexity API
+            url = "https://api.perplexity.ai/chat/completions"
+            headers = {
+                "Authorization": f"Bearer {self.perplexity_api_key}",
+                "Content-Type": "application/json"
+            }
+
+            payload = {
+                "model": "sonar-pro",
+                "messages": [
                     {
                         "role": "system",
                         "content": "You are a precise relationship extraction assistant. Return only valid JSON.",
                     },
                     {"role": "user", "content": prompt},
-                ],
-                max_tokens=1000,
-                temperature=self.llm_temperature,
-            )
+                ]
+            }
 
-            # Parse response
-            response_text = response.choices[0].message.content.strip()
+            response = requests.post(url, headers=headers, json=payload)
+            response.raise_for_status()
+            
+            response_data = response.json()
+            response_text = response_data["choices"][0]["message"]["content"].strip()
 
             try:
                 relationships_data = json.loads(response_text)
@@ -777,19 +784,16 @@ class LLMMetadataExtractor(MetadataExtractor):
                 return []
 
         except ImportError:
-            logger.warning("OpenAI library not available")
+            logger.warning("Requests library not available")
             return []
         except Exception as e:
-            logger.error(f"Error calling OpenAI API: {e}")
+            logger.error(f"Error calling Perplexity API: {e}")
             return []
 
     def _generate_summary_with_llm(self, text: str) -> List[Summary]:
-        """Generate summary using OpenAI API."""
+        """Generate summary using Perplexity API."""
         try:
-            import openai
-
-            # Set API key
-            openai.api_key = self.openai_api_key
+            import requests
 
             # Prepare prompt for summarization
             prompt = f"""
@@ -805,22 +809,29 @@ class LLMMetadataExtractor(MetadataExtractor):
             Create a clear, informative summary in 2-3 sentences. Only return valid JSON.
             """
 
-            # Call OpenAI API
-            response = openai.ChatCompletion.create(
-                model=self.llm_model,
-                messages=[
+            # Call Perplexity API
+            url = "https://api.perplexity.ai/chat/completions"
+            headers = {
+                "Authorization": f"Bearer {self.perplexity_api_key}",
+                "Content-Type": "application/json"
+            }
+
+            payload = {
+                "model": "sonar-pro",
+                "messages": [
                     {
                         "role": "system",
                         "content": "You are a precise summarization assistant. Return only valid JSON.",
                     },
                     {"role": "user", "content": prompt},
-                ],
-                max_tokens=500,
-                temperature=self.llm_temperature,
-            )
+                ]
+            }
 
-            # Parse response
-            response_text = response.choices[0].message.content.strip()
+            response = requests.post(url, headers=headers, json=payload)
+            response.raise_for_status()
+            
+            response_data = response.json()
+            response_text = response_data["choices"][0]["message"]["content"].strip()
 
             try:
                 summary_data = json.loads(response_text)
@@ -842,10 +853,10 @@ class LLMMetadataExtractor(MetadataExtractor):
                 return []
 
         except ImportError:
-            logger.warning("OpenAI library not available")
+            logger.warning("Requests library not available")
             return []
         except Exception as e:
-            logger.error(f"Error calling OpenAI API: {e}")
+            logger.error(f"Error calling Perplexity API: {e}")
             return []
 
 

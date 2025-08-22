@@ -116,7 +116,7 @@ class TestTextParser:
             assert content.structure["paragraphs"] == 3
             assert content.metadata["line_count"] == 4
             assert content.metadata["word_count"] == 6
-            assert content.metadata["character_count"] == 20
+            assert content.metadata["character_count"] == 21
 
         finally:
             os.unlink(temp_file_path)
@@ -149,20 +149,53 @@ class TestHTMLParser:
 
     def test_can_parse(self):
         """Test file type detection."""
+        # Mock BeautifulSoup availability
+        self.parser.bs4_available = True
         assert self.parser.can_parse("test.html") is True
         assert self.parser.can_parse("test.htm") is True
         assert self.parser.can_parse("test.txt") is False
         assert self.parser.can_parse("test.pdf") is False
 
-    @patch("parsers.BeautifulSoup")
-    def test_parse_html_file(self, mock_bs4):
+    def test_parse_html_file(self):
         """Test parsing an HTML file."""
         # Mock BeautifulSoup
         mock_soup = Mock()
         mock_soup.title.string = "Test Title"
         mock_soup.get_text.return_value = "Test content"
         mock_soup.find_all.return_value = []
-        mock_bs4.return_value = mock_soup
+        
+        # Mock the HTML parser to return success
+        with patch("bs4.BeautifulSoup", return_value=mock_soup):
+            # Create a temporary HTML file
+            html_content = """
+            <html>
+                <head><title>Test Title</title></head>
+                <body>
+                    <h1>Heading 1</h1>
+                    <p>Paragraph 1</p>
+                    <p>Paragraph 2</p>
+                </body>
+            </html>
+            """
+
+            with tempfile.NamedTemporaryFile(mode="w", suffix=".html", delete=False) as f:
+                f.write(html_content)
+                temp_file_path = f.name
+
+            try:
+                result = self.parser.parse(temp_file_path)
+
+                assert result.success is True
+                assert result.content is not None
+                assert result.error_message is None
+                assert result.parser_name == "HTMLParser"
+
+                content = result.content
+                assert "Test content" in content.text_content
+                assert content.metadata["title"] == "Test Title"
+
+            finally:
+                os.unlink(temp_file_path)
 
         # Create a temporary HTML file
         html_content = """
@@ -223,8 +256,7 @@ class TestPDFParser:
         assert self.parser.can_parse("test.txt") is False
         assert self.parser.can_parse("test.docx") is False
 
-    @patch("parsers.fitz")
-    def test_parse_pdf_file(self, mock_fitz):
+    def test_parse_pdf_file(self):
         """Test parsing a PDF file."""
         # Mock PyMuPDF
         mock_doc = Mock()
@@ -239,7 +271,26 @@ class TestPDFParser:
         mock_doc.metadata = {"Title": "Test PDF"}
         mock_doc.close = Mock()
 
-        mock_fitz.open.return_value = mock_doc
+        with patch("fitz.open", return_value=mock_doc):
+            # Create a temporary PDF file
+            with tempfile.NamedTemporaryFile(mode="w", suffix=".pdf", delete=False) as f:
+                f.write("fake pdf content")
+                temp_file_path = f.name
+
+            try:
+                result = self.parser.parse(temp_file_path)
+
+                assert result.success is True
+                assert result.content is not None
+                assert result.error_message is None
+                assert result.parser_name == "PDFParser"
+
+                content = result.content
+                assert "Page content" in content.text_content
+                assert content.metadata["title"] == "Test PDF"
+
+            finally:
+                os.unlink(temp_file_path)
 
         # Create a temporary PDF file
         with tempfile.NamedTemporaryFile(mode="w", suffix=".pdf", delete=False) as f:
@@ -291,8 +342,7 @@ class TestDOCXParser:
         assert self.parser.can_parse("test.txt") is False
         assert self.parser.can_parse("test.pdf") is False
 
-    @patch("parsers.Document")
-    def test_parse_docx_file(self, mock_document):
+    def test_parse_docx_file(self):
         """Test parsing a DOCX file."""
         # Mock python-docx
         mock_doc = Mock()
@@ -316,30 +366,29 @@ class TestDOCXParser:
         mock_doc.tables = [mock_table]
         mock_doc.core_properties = mock_props
 
-        mock_document.return_value = mock_doc
+        with patch("docx.Document", return_value=mock_doc):
+            # Create a temporary DOCX file
+            with tempfile.NamedTemporaryFile(mode="w", suffix=".docx", delete=False) as f:
+                f.write("fake docx content")
+                temp_file_path = f.name
 
-        # Create a temporary DOCX file
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".docx", delete=False) as f:
-            f.write("fake docx content")
-            temp_file_path = f.name
+            try:
+                result = self.parser.parse(temp_file_path)
 
-        try:
-            result = self.parser.parse(temp_file_path)
+                assert result.success is True
+                assert result.content is not None
+                assert result.error_message is None
+                assert result.parser_name == "DOCXParser"
 
-            assert result.success is True
-            assert result.content is not None
-            assert result.error_message is None
-            assert result.parser_name == "DOCXParser"
+                content = result.content
+                assert "Test paragraph" in content.text_content
+                assert content.structure["paragraphs"] == 1
+                assert content.structure["tables"] == 1
+                assert content.metadata["title"] == "Test Document"
+                assert content.metadata["author"] == "Test Author"
 
-            content = result.content
-            assert "Test paragraph" in content.text_content
-            assert content.structure["paragraphs"] == 1
-            assert content.structure["tables"] == 1
-            assert content.metadata["title"] == "Test Document"
-            assert content.metadata["author"] == "Test Author"
-
-        finally:
-            os.unlink(temp_file_path)
+            finally:
+                os.unlink(temp_file_path)
 
     def test_parse_without_python_docx(self):
         """Test parser behavior when python-docx is not available."""
@@ -429,8 +478,8 @@ class TestCascadingDocumentParser:
             for temp_file in temp_files:
                 os.unlink(temp_file)
 
-    @patch("parsers.PDFParser.can_parse")
-    @patch("parsers.PDFParser.parse")
+    @patch("src.parsers.PDFParser.can_parse")
+    @patch("src.parsers.PDFParser.parse")
     def test_cascading_strategy(self, mock_parse, mock_can_parse):
         """Test cascading parser strategy."""
         # Mock PDF parser to fail

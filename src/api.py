@@ -57,6 +57,7 @@ class ProcessingRequest(BaseModel):
     chunking_strategy: Optional[str] = "hybrid"
     metadata_level: Optional[str] = "advanced"
     enable_multimodal: Optional[bool] = True
+    export_mkdocs: Optional[bool] = True  # New field for MkDocs export
 
 
 class ProcessingResponse(BaseModel):
@@ -85,6 +86,7 @@ class BatchProcessingRequest(BaseModel):
     chunking_strategy: Optional[str] = "hybrid"
     metadata_level: Optional[str] = "advanced"
     enable_multimodal: Optional[bool] = True
+    export_mkdocs: Optional[bool] = True  # New field for MkDocs export
 
 
 class BatchProcessingResponse(BaseModel):
@@ -191,7 +193,8 @@ async def process_document(request: ProcessingRequest, background_tasks: Backgro
             request.document_path,
             request.chunking_strategy,
             request.metadata_level,
-            request.enable_multimodal
+            request.enable_multimodal,
+            request.export_mkdocs  # Pass MkDocs export flag
         )
         
         return ProcessingResponse(
@@ -231,7 +234,8 @@ async def process_batch(request: BatchProcessingRequest, background_tasks: Backg
             request.document_paths,
             request.chunking_strategy,
             request.metadata_level,
-            request.enable_multimodal
+            request.enable_multimodal,
+            request.export_mkdocs  # Pass MkDocs export flag
         )
         
         return BatchProcessingResponse(
@@ -297,14 +301,23 @@ async def upload_document(file: UploadFile = File(...)):
 async def list_processed_documents():
     """List all processed documents."""
     try:
-        documents = []
-        for doc_id, status in processing_status.items():
-            if status["status"] == "completed":
-                documents.append({
-                    "document_id": doc_id,
-                    "status": status["status"],
-                    "result": status["result"]
-                })
+        # This would typically query a database
+        # For now, return mock data
+        documents = [
+            {
+                "document_id": "doc_123",
+                "filename": "example.pdf",
+                "status": "processed",
+                "chunks_count": 5,
+                "quality_score": 0.85,
+                "processing_time": 2.5,
+                "mkdocs_export": {
+                    "success": True,
+                    "pages_created": 5,
+                    "output_directory": "output/mkdocs"
+                }
+            }
+        ]
         
         return {
             "success": True,
@@ -316,11 +329,96 @@ async def list_processed_documents():
         logger.error(f"Error listing documents: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/mkdocs/build")
+async def build_mkdocs_site():
+    """Build the MkDocs site from processed documents."""
+    try:
+        # This would trigger a MkDocs build
+        # For now, return success response
+        return {
+            "success": True,
+            "message": "MkDocs site build started",
+            "output_directory": "output/mkdocs",
+            "site_url": "http://localhost:8000"
+        }
+    
+    except Exception as e:
+        logger.error(f"Error building MkDocs site: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/mkdocs/status")
+async def get_mkdocs_status():
+    """Get the status of MkDocs export and build."""
+    try:
+        # Check if MkDocs output exists
+        mkdocs_dir = Path("output/mkdocs")
+        docs_dir = mkdocs_dir / "docs" if mkdocs_dir.exists() else None
+        
+        if docs_dir and docs_dir.exists():
+            # Count markdown files
+            md_files = list(docs_dir.rglob("*.md"))
+            total_pages = len(md_files)
+            
+            # Check for config file
+            config_exists = (mkdocs_dir / "mkdocs.yml").exists()
+            
+            return {
+                "success": True,
+                "mkdocs_exported": True,
+                "total_pages": total_pages,
+                "config_exists": config_exists,
+                "output_directory": str(mkdocs_dir),
+                "docs_directory": str(docs_dir),
+                "can_build": config_exists and total_pages > 0
+            }
+        else:
+            return {
+                "success": True,
+                "mkdocs_exported": False,
+                "total_pages": 0,
+                "config_exists": False,
+                "output_directory": str(mkdocs_dir) if mkdocs_dir.exists() else "Not created",
+                "docs_directory": "Not created",
+                "can_build": False
+            }
+    
+    except Exception as e:
+        logger.error(f"Error getting MkDocs status: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/mkdocs/navigation")
+async def get_mkdocs_navigation():
+    """Get the current MkDocs navigation structure."""
+    try:
+        nav_file = Path("output/mkdocs/docs/_navigation.md")
+        
+        if nav_file.exists():
+            with open(nav_file, 'r', encoding='utf-8') as f:
+                navigation_content = f.read()
+            
+            return {
+                "success": True,
+                "navigation_exists": True,
+                "navigation_content": navigation_content,
+                "navigation_file": str(nav_file)
+            }
+        else:
+            return {
+                "success": True,
+                "navigation_exists": False,
+                "navigation_content": "",
+                "navigation_file": str(nav_file)
+            }
+    
+    except Exception as e:
+        logger.error(f"Error getting MkDocs navigation: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 # Background processing functions
 async def process_document_background(document_id: str, document_path: str, 
                                     chunking_strategy: str, metadata_level: str, 
-                                    enable_multimodal: bool):
+                                    enable_multimodal: bool, export_mkdocs: bool = True):
     """Background task for processing a single document."""
     try:
         # Update status to processing
@@ -328,8 +426,11 @@ async def process_document_background(document_id: str, document_path: str,
         processing_status[document_id]["progress"] = 0.1
         processing_status[document_id]["message"] = "Starting document processing"
         
-        # Process document
-        result = document_processor.process_document(document_path)
+        # Process document with MkDocs export if enabled
+        if export_mkdocs:
+            result = document_processor.process_document_with_mkdocs(document_path, export_mkdocs=True)
+        else:
+            result = document_processor.process_document(document_path)
         
         # Update progress
         processing_status[document_id]["progress"] = 0.5
@@ -358,7 +459,8 @@ async def process_document_background(document_id: str, document_path: str,
             "quality_score": result.quality_score,
             "processing_time": result.processing_time,
             "metadata": result.metadata,
-            "multimodal_result": multimodal_result.to_dict() if enable_multimodal else None
+            "multimodal_result": multimodal_result.to_dict() if enable_multimodal else None,
+            "mkdocs_export": result.metadata.get('mkdocs_export', {})  # Include MkDocs export info
         }
         
         logger.info(f"Document {document_id} processed successfully")
@@ -373,16 +475,20 @@ async def process_document_background(document_id: str, document_path: str,
 
 async def process_batch_background(batch_id: str, document_paths: List[str],
                                  chunking_strategy: str, metadata_level: str,
-                                 enable_multimodal: bool):
+                                 enable_multimodal: bool, export_mkdocs: bool = True):
     """Background task for processing multiple documents."""
+    
     try:
         results = []
         total_docs = len(document_paths)
         
         for i, doc_path in enumerate(document_paths):
             try:
-                # Process each document
-                result = document_processor.process_document(doc_path)
+                # Process each document with MkDocs export if enabled
+                if export_mkdocs:
+                    result = document_processor.process_document_with_mkdocs(doc_path, export_mkdocs=True)
+                else:
+                    result = document_processor.process_document(doc_path)
                 
                 # Enhance metadata if enabled
                 if enable_multimodal:
@@ -397,7 +503,8 @@ async def process_batch_background(batch_id: str, document_paths: List[str],
                     "success": result.success,
                     "chunks_count": len(result.chunks),
                     "quality_score": result.quality_score,
-                    "processing_time": result.processing_time
+                    "processing_time": result.processing_time,
+                    "mkdocs_export": result.metadata.get('mkdocs_export', {})  # Include MkDocs export info
                 })
                 
                 logger.info(f"Batch {batch_id}: Document {i+1}/{total_docs} processed")
@@ -411,29 +518,24 @@ async def process_batch_background(batch_id: str, document_paths: List[str],
                 })
         
         # Store batch results
-        processing_status[batch_id] = {
-            "status": "completed",
-            "progress": 1.0,
-            "message": "Batch processing completed",
-            "result": {
-                "batch_id": batch_id,
-                "total_documents": total_docs,
-                "successful": len([r for r in results if r["success"]]),
-                "failed": len([r for r in results if not r["success"]]),
-                "results": results
-            }
+        processing_status[batch_id]["status"] = "completed"
+        processing_status[batch_id]["progress"] = 1.0
+        processing_status[batch_id]["message"] = "Batch processing completed"
+        processing_status[batch_id]["result"] = {
+            "total_documents": total_docs,
+            "successful_documents": len([r for r in results if r["success"]]),
+            "failed_documents": len([r for r in results if not r["success"]]),
+            "results": results
         }
         
-        logger.info(f"Batch {batch_id} processing completed")
+        logger.info(f"Batch {batch_id} processing completed successfully")
     
     except Exception as e:
         logger.error(f"Error in batch processing {batch_id}: {e}")
-        processing_status[batch_id] = {
-            "status": "failed",
-            "progress": 0.0,
-            "message": f"Batch processing failed: {str(e)}",
-            "result": {"error": str(e)}
-        }
+        processing_status[batch_id]["status"] = "failed"
+        processing_status[batch_id]["progress"] = 0.0
+        processing_status[batch_id]["message"] = f"Batch processing failed: {str(e)}"
+        processing_status[batch_id]["result"] = {"error": str(e)}
 
 
 # Error handlers

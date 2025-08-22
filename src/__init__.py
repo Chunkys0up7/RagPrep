@@ -66,6 +66,13 @@ from .vector_store import (
     VectorStore,
     get_vector_store,
 )
+from .mkdocs_exporter import (
+    MkDocsExporter,
+    MkDocsExportResult,
+    MkDocsPage,
+    MkDocsSection,
+    get_mkdocs_exporter,
+)
 
 __version__ = "0.1.0"
 __author__ = "RAGPrep Team"
@@ -78,58 +85,70 @@ __all__ = [
     "Config",
     "get_config",
     "reload_config",
-    # Document Parsing
+    
+    # Document processing
+    "DocumentProcessor",
+    "ProcessingResult",
+    
+    # Parsers
     "DocumentParser",
+    "CascadingDocumentParser",
     "PDFParser",
     "DOCXParser",
-    "TextParser",
     "HTMLParser",
-    "CascadingDocumentParser",
+    "TextParser",
     "ParsedContent",
     "ParserResult",
     "get_document_parser",
-    # Document Chunking
+    
+    # Chunkers
     "DocumentChunker",
     "FixedSizeChunker",
     "StructuralChunker",
     "SemanticChunker",
     "HybridChunker",
-    "DocumentChunkerFactory",
     "DocumentChunk",
     "ChunkingResult",
     "get_document_chunker",
-    # Metadata Extraction
+    
+    # Metadata extraction
     "MetadataExtractor",
     "BasicMetadataExtractor",
     "LLMMetadataExtractor",
-    "MetadataExtractorFactory",
     "Entity",
     "Topic",
     "Relationship",
     "Summary",
     "ExtractionResult",
     "get_metadata_extractor",
-    # Quality Assessment
+    
+    # Quality assessment
+    "QualityAssessmentSystem",
+    "QualityAssessor",
     "QualityMetric",
     "QualityReport",
     "PerformanceMetrics",
-    "QualityAssessor",
-    "ContentCompletenessAssessor",
-    "StructureIntegrityAssessor",
-    "MetadataAccuracyAssessor",
     "PerformanceMonitor",
-    "QualityAssessmentSystem",
     "get_quality_assessment_system",
+    
     # Security
+    "SecurityManager",
+    "FileValidator",
+    "ContentAnalyzer",
+    "FileSanitizer",
     "SecurityCheck",
     "FileSecurityProfile",
-    "FileValidator",
-    "FileSanitizer",
-    "ContentAnalyzer",
-    "SecurityManager",
-    # Vector Storage
+    
+    # Vector storage
     "VectorStore",
     "FileBasedVectorStore",
     "ChromaDBVectorStore",
     "get_vector_store",
+    
+    # MkDocs export
+    "MkDocsExporter",
+    "MkDocsExportResult",
+    "MkDocsPage",
+    "MkDocsSection",
+    "get_mkdocs_exporter",
 ]

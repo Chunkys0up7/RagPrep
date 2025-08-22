@@ -64,6 +64,15 @@ class DocumentProcessor:
             self.logger.warning(f"Vector store initialization failed: {e}")
             self.vector_store = None
 
+        # Initialize MkDocs exporter
+        try:
+            from .mkdocs_exporter import get_mkdocs_exporter
+            self.mkdocs_exporter = get_mkdocs_exporter(self.config)
+            self.logger.info("MkDocs exporter initialized successfully")
+        except Exception as e:
+            self.logger.warning(f"MkDocs exporter initialization failed: {e}")
+            self.mkdocs_exporter = None
+
         self.logger.info("Document processor initialized successfully")
 
     def process_document(self, document_path: str) -> ProcessingResult:
@@ -194,6 +203,51 @@ class DocumentProcessor:
                 error_message=str(e),
             )
 
+    def process_document_with_mkdocs(self, document_path: str,
+                                   export_mkdocs: bool = True) -> ProcessingResult:
+        """Process a document and optionally export to MkDocs format."""
+
+        # First process the document normally
+        result = self.process_document(document_path)
+
+        if result.success and export_mkdocs and self.mkdocs_exporter:
+            try:
+                # Get source filename for export
+                source_filename = Path(document_path).name
+
+                # Export to MkDocs
+                mkdocs_result = self.mkdocs_exporter.export_document(
+                    document_id=result.document_id,
+                    chunks=result.chunks,
+                    metadata=result.metadata,
+                    source_filename=source_filename
+                )
+
+                if mkdocs_result.success:
+                    self.logger.info(f"Document exported to MkDocs: {mkdocs_result.pages_created} pages created")
+                    # Add MkDocs info to result metadata
+                    result.metadata['mkdocs_export'] = {
+                        'success': True,
+                        'pages_created': mkdocs_result.pages_created,
+                        'output_directory': mkdocs_result.output_directory,
+                        'mkdocs_config_path': mkdocs_result.mkdocs_config_path
+                    }
+                else:
+                    self.logger.warning(f"MkDocs export failed: {mkdocs_result.errors}")
+                    result.metadata['mkdocs_export'] = {
+                        'success': False,
+                        'errors': mkdocs_result.errors
+                    }
+
+            except Exception as e:
+                self.logger.error(f"Error during MkDocs export: {e}")
+                result.metadata['mkdocs_export'] = {
+                    'success': False,
+                    'errors': [str(e)]
+                }
+
+        return result
+
     def process_batch(self, document_paths: List[str]) -> List[ProcessingResult]:
         """Process multiple documents in batch."""
         results = []
@@ -206,6 +260,62 @@ class DocumentProcessor:
 
             if not result.success:
                 self.logger.warning(f"Document {doc_path} failed processing")
+
+        return results
+
+    def process_batch_with_mkdocs(self, document_paths: List[str],
+                                export_mkdocs: bool = True) -> List[ProcessingResult]:
+        """Process multiple documents and optionally export to MkDocs format."""
+
+        results = []
+
+        for doc_path in document_paths:
+            try:
+                result = self.process_document_with_mkdocs(doc_path, export_mkdocs)
+                results.append(result)
+            except Exception as e:
+                self.logger.error(f"Error processing document {doc_path}: {e}")
+                # Create error result
+                error_result = ProcessingResult(
+                    success=False,
+                    document_id=f"error_{hash(doc_path)}",
+                    chunks=[],
+                    metadata={},
+                    quality_score=0.0,
+                    processing_time=0.0,
+                    error_message=str(e)
+                )
+                results.append(error_result)
+
+        # If MkDocs export is enabled, also do batch export
+        if export_mkdocs and self.mkdocs_exporter:
+            try:
+                # Prepare documents for batch export
+                docs_for_export = []
+                for result in results:
+                    if result.success:
+                        docs_for_export.append({
+                            'document_id': result.document_id,
+                            'chunks': result.chunks,
+                            'metadata': result.metadata,
+                            'source_filename': result.metadata.get('source_filename', 'unknown')
+                        })
+
+                if docs_for_export:
+                    batch_result = self.mkdocs_exporter.export_batch(docs_for_export)
+                    self.logger.info(f"Batch MkDocs export completed: {batch_result.pages_created} total pages")
+
+                    # Add batch export info to each result
+                    for result in results:
+                        if result.success:
+                            result.metadata['batch_mkdocs_export'] = {
+                                'success': batch_result.success,
+                                'total_pages': batch_result.pages_created,
+                                'output_directory': batch_result.output_directory
+                            }
+
+            except Exception as e:
+                self.logger.error(f"Error during batch MkDocs export: {e}")
 
         return results
 
