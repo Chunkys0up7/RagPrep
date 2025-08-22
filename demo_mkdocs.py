@@ -46,7 +46,8 @@ def demo_mkdocs_export():
     try:
         result = processor.process_document_with_mkdocs(
             document_path=test_doc_path,
-            export_mkdocs=True
+            export_mkdocs=True,
+            build_site=True
         )
         
         processing_time = time.time() - start_time
@@ -56,6 +57,13 @@ def demo_mkdocs_export():
             print(f"📊 Generated {len(result.chunks)} chunks")
             print(f"🎯 Quality score: {result.quality_score:.3f}")
             
+            # Check if original content is preserved
+            if result.original_content:
+                print(f"📄 Original content preserved: {len(result.original_content)} characters")
+                print(f"📝 Word count: {len(result.original_content.split())}")
+            else:
+                print("⚠️  No original content found in result")
+            
             # Check MkDocs export status
             if 'mkdocs_export' in result.metadata:
                 mkdocs_info = result.metadata['mkdocs_export']
@@ -64,6 +72,21 @@ def demo_mkdocs_export():
                     print(f"   📄 Pages created: {mkdocs_info.get('pages_created', 0)}")
                     print(f"   📁 Output directory: {mkdocs_info.get('output_directory', 'N/A')}")
                     print(f"   ⚙️  Config file: {mkdocs_info.get('mkdocs_config_path', 'N/A')}")
+                    
+                    # Show information about original document
+                    if result.original_content:
+                        print(f"   📄 Original document: Complete, unchunked version created")
+                        print(f"   📄 Chunked versions: {len(result.chunks)} semantic chunks created")
+                    else:
+                        print(f"   ⚠️  Original document: Not available")
+                    
+                    # Show site building information
+                    if mkdocs_info.get('site_built'):
+                        print(f"   🌐 Static site built successfully in {mkdocs_info.get('build_time', 0):.2f}s")
+                        print(f"   📁 Site directory: {mkdocs_info.get('site_directory', 'N/A')}")
+                        print(f"   🔗 Site URL: {mkdocs_info.get('site_url', 'N/A')}")
+                    else:
+                        print(f"   ⚠️  Static site: Not built")
                 else:
                     print(f"❌ MkDocs export failed: {mkdocs_info.get('errors', [])}")
             else:
@@ -91,7 +114,8 @@ def demo_mkdocs_export():
             document_id=result.document_id,
             chunks=result.chunks,
             metadata=result.metadata,
-            source_filename=Path(test_doc_path).name
+            source_filename=Path(test_doc_path).name,
+            build_site=True
         )
         
         if mkdocs_result.success:

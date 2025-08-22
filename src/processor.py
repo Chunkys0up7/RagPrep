@@ -30,6 +30,7 @@ class ProcessingResult:
     metadata: Dict[str, Any]
     quality_score: float
     processing_time: float
+    original_content: Optional[str] = None  # Add original content field
     error_message: Optional[str] = None
     warnings: List[str] = None
 
@@ -92,6 +93,7 @@ class DocumentProcessor:
                     metadata={},
                     quality_score=0.0,
                     processing_time=time.time() - start_time,
+                    original_content=None,  # No content for security failure
                     error_message="File failed security validation",
                 )
 
@@ -107,6 +109,7 @@ class DocumentProcessor:
                     metadata={},
                     quality_score=0.0,
                     processing_time=time.time() - start_time,
+                    original_content=None,  # No content for parsing failure
                     error_message=f"Parsing failed: {parse_result.error_message}",
                 )
 
@@ -122,6 +125,7 @@ class DocumentProcessor:
                     metadata=parse_result.content.metadata,
                     quality_score=0.0,
                     processing_time=time.time() - start_time,
+                    original_content=parse_result.content.text_content,  # Keep original content even if chunking fails
                     error_message=f"Chunking failed: {chunk_result.error_message}",
                 )
 
@@ -188,6 +192,7 @@ class DocumentProcessor:
                 metadata=metadata,
                 quality_score=overall_quality,
                 processing_time=time.time() - start_time,
+                original_content=parse_result.content.text_content,  # Store original content
                 warnings=chunk_result.errors,
             )
 
@@ -200,11 +205,13 @@ class DocumentProcessor:
                 metadata={},
                 quality_score=0.0,
                 processing_time=time.time() - start_time,
+                original_content=None,  # No content for failed processing
                 error_message=str(e),
             )
 
     def process_document_with_mkdocs(self, document_path: str,
-                                   export_mkdocs: bool = True) -> ProcessingResult:
+                                   export_mkdocs: bool = True,
+                                   build_site: bool = True) -> ProcessingResult:
         """Process a document and optionally export to MkDocs format."""
 
         # First process the document normally
@@ -214,13 +221,18 @@ class DocumentProcessor:
             try:
                 # Get source filename for export
                 source_filename = Path(document_path).name
+                
+                # Use the original content directly from the result
+                original_content = result.original_content
 
                 # Export to MkDocs
                 mkdocs_result = self.mkdocs_exporter.export_document(
                     document_id=result.document_id,
                     chunks=result.chunks,
                     metadata=result.metadata,
-                    source_filename=source_filename
+                    source_filename=source_filename,
+                    original_content=original_content,
+                    build_site=build_site
                 )
 
                 if mkdocs_result.success:
@@ -230,7 +242,11 @@ class DocumentProcessor:
                         'success': True,
                         'pages_created': mkdocs_result.pages_created,
                         'output_directory': mkdocs_result.output_directory,
-                        'mkdocs_config_path': mkdocs_result.mkdocs_config_path
+                        'mkdocs_config_path': mkdocs_result.mkdocs_config_path,
+                        'site_built': mkdocs_result.site_built,
+                        'site_directory': mkdocs_result.site_directory,
+                        'site_url': mkdocs_result.site_url,
+                        'build_time': mkdocs_result.build_time
                     }
                 else:
                     self.logger.warning(f"MkDocs export failed: {mkdocs_result.errors}")
@@ -264,14 +280,15 @@ class DocumentProcessor:
         return results
 
     def process_batch_with_mkdocs(self, document_paths: List[str],
-                                export_mkdocs: bool = True) -> List[ProcessingResult]:
+                                export_mkdocs: bool = True,
+                                build_site: bool = True) -> List[ProcessingResult]:
         """Process multiple documents and optionally export to MkDocs format."""
 
         results = []
 
         for doc_path in document_paths:
             try:
-                result = self.process_document_with_mkdocs(doc_path, export_mkdocs)
+                result = self.process_document_with_mkdocs(doc_path, export_mkdocs, build_site=False)
                 results.append(result)
             except Exception as e:
                 self.logger.error(f"Error processing document {doc_path}: {e}")
@@ -298,11 +315,12 @@ class DocumentProcessor:
                             'document_id': result.document_id,
                             'chunks': result.chunks,
                             'metadata': result.metadata,
-                            'source_filename': result.metadata.get('source_filename', 'unknown')
+                            'source_filename': result.metadata.get('source_filename', 'unknown'),
+                            'original_content': result.original_content  # Use original_content field directly
                         })
 
                 if docs_for_export:
-                    batch_result = self.mkdocs_exporter.export_batch(docs_for_export)
+                    batch_result = self.mkdocs_exporter.export_batch(docs_for_export, build_site=build_site)
                     self.logger.info(f"Batch MkDocs export completed: {batch_result.pages_created} total pages")
 
                     # Add batch export info to each result
@@ -311,7 +329,11 @@ class DocumentProcessor:
                             result.metadata['batch_mkdocs_export'] = {
                                 'success': batch_result.success,
                                 'total_pages': batch_result.pages_created,
-                                'output_directory': batch_result.output_directory
+                                'output_directory': batch_result.output_directory,
+                                'site_built': batch_result.site_built,
+                                'site_directory': batch_result.site_directory,
+                                'site_url': batch_result.site_url,
+                                'build_time': batch_result.build_time
                             }
 
             except Exception as e:
